@@ -13,6 +13,8 @@ def main():
     parser.add_argument("--publish", action="store_true", help="write data/out/, copy to web/public/data/")
     parser.add_argument("--all", action="store_true", help="run every step in order")
     parser.add_argument("--refresh", action="store_true", help="re-download data/raw/ even if cached")
+    parser.add_argument("--base", choices=sorted(fuse.BASES), default="road_network",
+                        help="base geometry for --fuse (bumpy_roads = fallback)")
     args = parser.parse_args()
 
     if not (args.ingest or args.fuse or args.score or args.publish or args.all):
@@ -22,7 +24,7 @@ def main():
     if args.all or args.ingest:
         ingest.run(refresh=args.refresh)
     if args.all or args.fuse:
-        fuse.run()
+        fuse.run(base=args.base)
     if args.all or args.score:
         score.run()
     if args.all or args.publish:

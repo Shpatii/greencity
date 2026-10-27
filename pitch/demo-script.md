@@ -3,8 +3,7 @@
 Placeholders in `[BRACKETS]` must be filled before Wednesday. Do not say them out loud as-is.
 
 Before any demo:
-- Run `python run.py --publish` so the app shows real data. If the red **MOCK DATA** badge is still
-  visible, say so in the first sentence ("This is test data; the real run lands Wednesday").
+- Run `python run.py --publish` so the app shows the latest data.
 - Open the app in a fresh tab, map fully loaded, method box closed, default weights.
 - Zoom the browser so the sidebar's top-10 list is fully visible without scrolling.
 

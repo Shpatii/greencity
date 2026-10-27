@@ -9,7 +9,7 @@ and the top-10 list ends at ≈ 460 px, so it is always visible without scrollin
 
 ```
 +------------------------------------------------------------------+-------------------------------------------+
-|                                                          [+]     | SafeLane HN                  [MOCK DATA]  |  56
+|                                                          [+]     | SafeLane HN                               |  56
 |                                                          [-]     | Bike sensor rides show where Heilbronn    |
 |                                                                  | should act first                          |
 |        ~~~~~~~~ (very high, dark purple)                         +-------------------------------------------+
@@ -65,7 +65,7 @@ Single column; the page scrolls, the map does not capture vertical swipes outsid
 
 ```
 +--------------------------------------+
-| SafeLane HN            [MOCK DATA]   |
+| SafeLane HN                          |
 | Bike sensor rides show where         |
 | Heilbronn should act first           |
 +--------------------------------------+

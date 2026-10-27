@@ -49,11 +49,12 @@ export default function Page() {
           )}
         </header>
         <div className="flex flex-col gap-3 p-4">
-          <WeightSliders />
+          <Legend />
           <RankList />
           <SegmentCard />
-          <Legend />
-          <MethodBox />
+          <WeightSliders />
+          {/* Default weights until WeightSliders owns weight state. */}
+          {meta && <MethodBox weights={meta.default_weights} meta={meta} />}
         </div>
       </aside>
     </main>

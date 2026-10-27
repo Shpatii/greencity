@@ -18,9 +18,15 @@ export interface Copy {
   };
   methodBox: {
     title: string;
+    toggle: string;
     explanation: string;
+    weightsCaption: string;
+    factorHeader: string;
+    weightHeader: string;
     limitsTitle: string;
     limits: readonly string[];
+    dataSource: (generatedAt: string) => string;
+    mockWarning: string;
   };
   emptyStates: {
     noSegmentSelected: string;
@@ -69,17 +75,23 @@ export const copy: Copy = {
 
   methodBox: {
     title: 'How the score works',
+    toggle: 'How we score',
     explanation:
       'Local riders cycled Heilbronn with senseBox:bike sensors. For each street section we look at five things: ' +
       'close passes by cars, risky near misses, bumpy surface, fine dust and stop-and-go traffic. Each is compared ' +
       'with the rest of the city, weighted by the sliders and added up to a score from 0 to 100. ' +
       'Higher means: look at this street first.',
+    weightsCaption: 'Current weights',
+    factorHeader: 'Factor',
+    weightHeader: 'Weight',
     limitsTitle: 'What this data cannot tell you',
     limits: [
       'Riders chose their own routes, so popular streets have more data. A street with no data is not safe, just unmeasured.',
       'Passing cars are detected by AI. It misses some and miscounts others, so a single value can be off.',
       'Some streets have only a few measurements. Their scores are less certain, so check the confidence on each card.',
     ],
+    dataSource: (generatedAt) => `Data: ATRAI senseBox:bike, generated ${generatedAt}`,
+    mockWarning: 'This is made-up test data, not real measurements. Do not draw conclusions from it.',
   },
 
   emptyStates: {

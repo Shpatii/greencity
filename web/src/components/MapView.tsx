@@ -183,7 +183,13 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
     applySelected(map, selectedId, segments);
   }, [selectedId, segments]);
 
-  return <div ref={containerRef} className="absolute inset-0" />;
+  // maplibre-gl.css sets .maplibregl-map { position: relative }, which overrides
+  // `absolute` on the container itself, so position a wrapper instead.
+  return (
+    <div className="absolute inset-0">
+      <div ref={containerRef} className="h-full w-full" />
+    </div>
+  );
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

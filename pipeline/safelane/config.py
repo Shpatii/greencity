@@ -23,4 +23,5 @@ DEFAULT_WEIGHTS = {
 MIN_POINTS = 5
 CONFIDENCE_N = 30
 METRIC_CRS = "EPSG:25832"
-MATCH_DISTANCE_M = 20
+MATCH_DISTANCE_M = 20  # point layers -> nearest segment
+LINE_MATCH_DISTANCE_M = 10  # line layer midpoint -> nearest segment

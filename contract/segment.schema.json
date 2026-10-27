@@ -27,7 +27,7 @@
     "n_overtakes": { "type": "integer", "description": "Sum of the overtaking histogram" },
     "share_below_150": { "$ref": "#/$defs/unitOrNull", "description": "Share of overtakes under 150 cm (0-1)" },
     "avg_overtake_cm": { "type": ["number", "null"], "description": "Average overtaking distance" },
-    "danger_per_100m": { "type": ["number", "null"], "description": "Danger points per 100 m" },
+    "danger_per_100m": { "type": ["number", "null"], "description": "Danger points per 100 m of max(length_m, danger_min_length_m)" },
     "mean_danger_risk": { "$ref": "#/$defs/unitOrNull", "description": "Mean Risk Index of danger points (0-1)" },
     "mean_pm_risk": { "$ref": "#/$defs/unitOrNull", "description": "Mean Risk Index of PM danger points (0-1)" },
     "roughness_norm": { "$ref": "#/$defs/unitOrNull", "description": "Normalized Roughness (0-1)" },

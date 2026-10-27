@@ -1,6 +1,6 @@
 # 3. Data contract
 
-One file connects everyone: segments.geojson plus meta.json. The pipeline writes it, the web app only reads it. Because the frontend gets ready-made 0–1 factors, it never needs to know how the raw data works, and mock data can stand in until Wednesday.
+One file connects everyone: segments.geojson plus meta.json. The pipeline writes it, the web app only reads it. Because the frontend gets ready-made 0–1 factors, it never needs to know how the raw data works.
 
 ## 3.1 File structure
 
@@ -23,10 +23,9 @@ safelane-hn/
 │  │  ├─ validate.py            # P3: check output against the contract
 │  │  └─ report.py              # P3: PDF priority list (phase 3)
 │  └─ tests/
-├─ mock/make_mock.py            # P3: fake data, same contract
 ├─ data/
 │  ├─ raw/                      # cached API responses (git-ignored)
-│  └─ out/                      # segments.geojson, meta.json, ranking.csv
+│  └─ out/                      # segments.geojson, meta.json, stats.json
 ├─ web/                         # Next.js 14, TypeScript, Tailwind, maplibre-gl
 │  ├─ public/data/              # segments.geojson + meta.json the app loads
 │  └─ src/
@@ -41,6 +40,8 @@ safelane-hn/
 
 ## 3.2 Segment properties (one GeoJSON LineString feature per street segment, WGS84)
 
+A segment is one undirected street edge: the two directions of a two-way street in road_network_heilbronn (rows (u, v, k) and (v, u, k)) are merged, and the segment keeps the id of the lower row. A measurement row that appears on both directions counts once.
+
 | Field | Type | Meaning | Written by |
 |---|---|---|---|
 | id | string | Stable id, seg_000123 | P1 |
@@ -51,7 +52,7 @@ safelane-hn/
 | n_overtakes | int | Sum of the overtaking histogram | P1 |
 | share_below_150 | number \| null | Share of overtakes under 150 cm (0–1) | P1 |
 | avg_overtake_cm | number \| null | Average overtaking distance | P1 |
-| danger_per_100m | number \| null | Danger points per 100 m | P1 |
+| danger_per_100m | number \| null | Danger points per 100 m of max(length_m, danger_min_length_m) | P1 |
 | mean_danger_risk | number \| null | Mean Risk Index of danger points (0–1) | P1 |
 | mean_pm_risk | number \| null | Mean Risk Index of PM danger points (0–1) | P1 |
 | roughness_norm | number \| null | Normalized Roughness (0–1) | P1 |
@@ -69,7 +70,7 @@ Factor rules (missing data → factor = 0 and the key goes into `missing`):
 
 | Factor | Formula |
 |---|---|
-| f_safety | share_below_150 |
+| f_safety | (n_below + k · city_share) / (n_overtakes + k), with n_below = round(share_below_150 · n_overtakes), k = safety_prior_k, city_share = city_share_below_150 |
 | f_danger | min(1, danger_per_100m / P95 of danger_per_100m) |
 | f_surface | roughness_norm |
 | f_air | mean_pm_risk |
@@ -79,7 +80,7 @@ $$
 \text{score} = 100 \cdot c \cdot \sum_{k} w_k f_k, \qquad c = \min\left(1, \frac{n_{\text{points}}}{N}\right), \qquad \sum_k w_k = 1
 $$
 
-A segment is eligible when n_points ≥ min_points. Rank = eligible segments by score descending; ties by n_points descending, then id. Defaults (P1 may tune once on Tuesday night, then record in meta.json): weights safety 0.35, danger 0.25, surface 0.15, air 0.15, flow 0.10; min_points 5; confidence_n N = 30.
+f_safety shrinks small samples toward the city-wide share: one close pass out of one overtake is weak evidence, so it no longer gives f_safety = 1. city_share_below_150 is the share of all overtakes under 150 cm, over all segments. A segment is eligible when n_points ≥ min_points. Rank = eligible segments by score descending; ties by n_points descending, then id. Defaults (P1 may tune once on Tuesday night, then record in meta.json): weights safety 0.35, danger 0.25, surface 0.15, air 0.15, flow 0.10; min_points 5; confidence_n N = 30; safety_prior_k 10; danger_min_length_m 50.
 
 Example feature (invented values, for shape only):
 
@@ -101,14 +102,17 @@ Example feature (invented values, for shape only):
 ## 3.3 meta.json
 
 ```json
-{"version": "1.0", "source": "mock", "generated_at": "2026-10-27T15:30:00+01:00",
+{"version": "1.1", "source": "atrai", "generated_at": "2026-10-27T15:30:00+01:00",
  "city": "heilbronn", "n_segments": 0, "n_eligible": 0,
  "min_points": 5, "confidence_n": 30, "danger_p95": 0,
+ "city_share_below_150": 0, "safety_prior_k": 10, "danger_min_length_m": 50,
  "default_weights": {"safety": 0.35, "danger": 0.25, "surface": 0.15, "air": 0.15, "flow": 0.10},
  "bbox": [9.17, 49.11, 9.25, 49.17]}
 ```
 
-`source` is `"mock"` or `"atrai"`; the web app shows a "MOCK DATA" badge when it is `"mock"`.
+`source` is always `"atrai"`. `bbox` is the initial map view: the 2nd–98th percentile of segment midpoints, so a few far-out rides do not zoom the map out.
+
+`data/out/stats.json` (pipeline only, not copied to the web app) records match rates per layer, twin merges, n_points distribution, score bands and the top-10 ids, so QA can recompute every number.
 
 ## 3.4 TypeScript mirror (web/src/lib/types.ts)
 
@@ -130,9 +134,10 @@ export interface SegmentProps {
 }
 
 export interface Meta {
-  version: string; source: 'mock' | 'atrai'; generated_at: string; city: string;
+  version: string; source: 'atrai'; generated_at: string; city: string;
   n_segments: number; n_eligible: number; min_points: number; confidence_n: number;
-  danger_p95: number; default_weights: Weights; bbox: [number, number, number, number];
+  danger_p95: number; city_share_below_150: number; safety_prior_k: number;
+  danger_min_length_m: number; default_weights: Weights; bbox: [number, number, number, number];
 }
 ```
 
@@ -152,3 +157,11 @@ export interface Meta {
 - One branch per person: p1-data, p2-web, p3-qa, p4-design. Merge to main by pull request at each gate.
 - Commit data/out/ and web/public/data/; never commit data/raw/.
 - Changing the contract after 15:30 needs a 2-minute team agreement and a version bump in meta.json.
+
+## 3.7 Changes
+
+| Version | Change | Why |
+|---|---|---|
+| 1.1 | Merge both directions of a two-way street into one segment | Twins were ranked separately (same street twice) and the twin drawn on top took map clicks (G2 audit X1, B12e) |
+| 1.1 | f_safety shrunk toward city_share_below_150 with k = 10; danger_per_100m over max(length, 50 m) | 1–3 overtakes on 11–20 m junction stubs filled the top 10 (G2 audit A9) |
+| 1.1 | meta: city_share_below_150, safety_prior_k, danger_min_length_m; bbox = 2–98% view extent; stats.json | Make every factor reproducible from the published files |

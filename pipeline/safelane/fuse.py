@@ -30,6 +30,14 @@ LINE_LAYERS = {
     "traffic_flow": ("road_segment", "points_in_segment"),
     "speed": ("road_segment", "points_in_segment"),
 }
+# Columns that identify one measurement row of a line layer: a row repeated on both
+# directions of a two-way street is the same measurement (see _merge_twins).
+LINE_VALUES = {
+    "overtaking": ("Overtaking Distance Counts", "Average Overtaking Distance cm", "Number of Points"),
+    "roughness": ("Normalized Roughness", "Number of Boxes"),
+    "traffic_flow": ("avg_traffic_flow", "points_in_segment"),
+    "speed": ("avg_speed[km/h]", "points_in_segment"),
+}
 POINT_LAYERS = {
     "danger": "Risk Index Overtaking",
     "danger_pm": "Risk Index",
@@ -73,11 +81,19 @@ def share_below_150(hist):
     return sum(hist[:N_BELOW_150]) / total if total else None
 
 
-def factors(m, danger_p95):
+def shrunk_share(share, n_overtakes, city_share, k=config.SAFETY_PRIOR_K):
+    """(n_below + k * city_share) / (n_overtakes + k): one close pass alone no longer means f_safety = 1.
+
+    n_below is recovered from the rounded share, so the factor can be recomputed from the output file.
+    """
+    return (round(share * n_overtakes) + k * city_share) / (n_overtakes + k)
+
+
+def factors(m, danger_p95, city_share):
     """CONTRACT 3.2 factor rules: ({f_key: 0-1}, [keys with no data])."""
-    dp, flow = m["danger_per_100m"], m["traffic_flow"]
+    share, dp, flow = m["share_below_150"], m["danger_per_100m"], m["traffic_flow"]
     raw = {
-        "safety": m["share_below_150"],
+        "safety": None if share is None else shrunk_share(share, m["n_overtakes"], city_share),
         "danger": None if dp is None else (min(1.0, dp / danger_p95) if danger_p95 else 0.0),
         "surface": m["roughness_norm"],
         "air": m["mean_pm_risk"],
@@ -125,6 +141,24 @@ def _fill_names(names, base):
     return names.where(named, hit.map(names).map(path_name))
 
 
+def _undirected(base):
+    """Base row -> representative row (lowest index) of its undirected edge.
+
+    road_network is a directed OSMnx graph: a two-way street is two rows (u, v, key) and
+    (v, u, key) with the same geometry. Measurements on either direction belong to one street.
+    """
+    if "index" not in base:
+        return pd.Series(base.index, index=base.index)
+    edge = base["index"].map(lambda v: (lambda u, w, k: (min(u, w), max(u, w), k))(*parse_list(v)))
+    return pd.Series(base.index, index=base.index).groupby(edge).transform("min")
+
+
+def _merge_twins(layer, canon, value_cols):
+    """Map seg to its undirected edge; a measurement row repeated on both directions counts once."""
+    layer = layer.assign(seg=layer["seg"].map(canon))
+    return layer.drop_duplicates(subset=["seg", *value_cols])
+
+
 def _wavg(df, col, weight):
     d = df.dropna(subset=[col])
     w = d[weight].clip(lower=1)
@@ -141,10 +175,15 @@ def _str(v):
 
 
 def build(base_name="road_network"):
-    """Return (base GeoDataFrame, metrics DataFrame on the base index, match report rows)."""
+    """Return (base GeoDataFrame, metrics DataFrame on the base index, match report rows, twin count).
+
+    Only representative rows of an undirected edge get data; their twins end with n_points 0.
+    """
     base_key, road_col = BASES[base_name]
     base = _load(base_key).reset_index(drop=True)
     base["road"] = base.index if road_col is None else base[road_col].astype(int)
+    canon = _undirected(base)
+    n_twins = int((canon != canon.index).sum())
 
     m = pd.DataFrame(index=base.index)
     m["id"] = [f"seg_{i:06d}" for i in base.index]
@@ -158,7 +197,7 @@ def build(base_name="road_network"):
         g = _load(key)
         g["seg"] = _match_lines(g, base, col)
         report.append((key, len(g), int(g["seg"].notna().sum())))
-        lines[key] = g.dropna(subset=["seg"]).astype({"seg": int})
+        lines[key] = _merge_twins(g.dropna(subset=["seg"]), canon, LINE_VALUES[key]).astype({"seg": int})
 
     o = lines["overtaking"]
     bins = pd.DataFrame(o["Overtaking Distance Counts"].map(parse_histogram).tolist(), index=o.index)
@@ -177,7 +216,7 @@ def build(base_name="road_network"):
     points = {}
     for key, col in POINT_LAYERS.items():
         g = _load(key)
-        seg = _nearest(g.geometry, base, config.MATCH_DISTANCE_M)
+        seg = _nearest(g.geometry, base, config.MATCH_DISTANCE_M).map(canon)
         report.append((key, len(g), len(seg)))
         points[key] = g.loc[seg.index, col].groupby(seg).agg(["size", "mean"])
 
@@ -185,14 +224,15 @@ def build(base_name="road_network"):
     # means 0 danger, no points on a segment it never measured means unknown.
     n_danger = points["danger"]["size"].reindex(m.index, fill_value=0)
     measured = n_danger.gt(0) | m.index.isin(o["seg"])
-    m["danger_per_100m"] = (n_danger / m["length_m"] * 100).where(measured)
+    # Floor the length so one point on a 12 m stub is not "80 per 100 m".
+    m["danger_per_100m"] = (n_danger / m["length_m"].clip(lower=config.DANGER_MIN_LENGTH_M) * 100).where(measured)
     m["mean_danger_risk"] = points["danger"]["mean"]
     m["mean_pm_risk"] = points["danger_pm"]["mean"]
-    return base, m, report
+    return base, m, report, n_twins
 
 
 def to_features(m):
-    """Contract properties per row (rounded; factors computed from the rounded metrics) and danger_p95."""
+    """Contract properties per row (rounded; factors computed from the rounded metrics), danger_p95, city_share."""
     rows = []
     for r in m.itertuples():
         rows.append({
@@ -213,20 +253,23 @@ def to_features(m):
         })
     positive = [p["danger_per_100m"] for p in rows if p["danger_per_100m"]]
     danger_p95 = round(float(pd.Series(positive).quantile(0.95)), 3) if positive else 0.0
+    n_total = sum(p["n_overtakes"] for p in rows if p["share_below_150"] is not None)
+    n_below = sum(round(p["share_below_150"] * p["n_overtakes"]) for p in rows if p["share_below_150"] is not None)
+    city_share = round(n_below / n_total, 4) if n_total else 0.0
     for p in rows:
-        f, missing = factors(p, danger_p95)
+        f, missing = factors(p, danger_p95, city_share)
         p.update({k: round(v, 4) for k, v in f.items()})
         p.update({"missing": missing, "confidence": 0.0, "eligible": False,
                   "score": None, "rank": None, "reason_texts": {}})
-    return rows, danger_p95
+    return rows, danger_p95, city_share
 
 
-def _print_reports(m, kept, report):
+def _print_reports(m, kept, report, n_twins):
     print(f"\n{'layer':<13} {'features':>8} {'matched':>8} {'%':>6}")
     for key, n, matched in report:
         print(f"{key:<13} {n:>8} {matched:>8} {100 * matched / n if n else 0:>5.1f}%")
     n = m["n_points"]
-    print(f"\nsegments: {len(m)} in base, {kept} kept (n_points >= 1)")
+    print(f"\nsegments: {len(m)} in base, {n_twins} twin directions merged, {kept} kept (n_points >= 1)")
     for t in (1, 5, 10, 30):
         print(f"  n_points >= {t:<2}: {int((n >= t).sum())}")
     print(f"  median n_points (kept): {n[n >= 1].median():g}")
@@ -234,13 +277,19 @@ def _print_reports(m, kept, report):
 
 def run(base="road_network"):
     print(f"fuse (base: {base})")
-    base_gdf, m, report = build(base)
+    base_gdf, m, report, n_twins = build(base)
     keep = m["n_points"] >= 1
-    rows, danger_p95 = to_features(m[keep])
-    _print_reports(m, len(rows), report)
+    rows, danger_p95, city_share = to_features(m[keep])
+    _print_reports(m, len(rows), report, n_twins)
 
     overtaking = next(r for r in report if r[0] == "overtaking")
     if base == "road_network" and overtaking[2] < 0.5 * overtaking[1]:
         print("\nWARNING: < 50% of overtaking lines matched; try `python run.py --fuse --base bumpy_roads`")
-    print(f"danger_p95: {danger_p95}")
-    export.write(base_gdf.geometry[keep], rows, danger_p95)
+    print(f"danger_p95: {danger_p95}, city_share_below_150: {city_share}")
+    stats = {
+        "n_base_edges": len(m),
+        "n_twins_merged": n_twins,
+        "match": {key: {"features": n, "matched": hit, "share": round(hit / n, 4) if n else 0.0}
+                  for key, n, hit in report},
+    }
+    export.write(base_gdf.geometry[keep], rows, danger_p95, city_share, stats)

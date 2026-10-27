@@ -86,12 +86,6 @@ export default function MethodBox({ weights, meta }: Props) {
         </div>
 
         <p className="text-xs text-neutral-700">{text.dataSource(formatGeneratedAt(meta.generated_at))}</p>
-
-        {meta.source === 'mock' && (
-          <p role="note" className="rounded border border-red-200 bg-red-50 px-2 py-1.5 text-xs font-medium text-red-800">
-            {text.mockWarning}
-          </p>
-        )}
       </div>
     </section>
   );

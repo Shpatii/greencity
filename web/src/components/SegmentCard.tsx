@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { SegmentFeature } from '@/lib/loadData';
-import type { Meta } from '@/lib/types';
+import type { Meta, Weights } from '@/lib/types';
 import { topReasons } from '@/lib/stats';
 import { copy } from '@/content/copy';
 import { colorForScore } from '@/content/theme';
@@ -8,10 +8,12 @@ import { colorForScore } from '@/content/theme';
 interface Props {
   segment: SegmentFeature;
   meta: Meta;
+  /** Current slider weights; defaults to meta.default_weights. */
+  weights?: Weights;
   onClose: () => void;
 }
 
-export default function SegmentCard({ segment, meta, onClose }: Props) {
+export default function SegmentCard({ segment, meta, weights, onClose }: Props) {
   const p = segment.properties;
   const name = p.name ?? copy.unnamed;
 
@@ -27,7 +29,7 @@ export default function SegmentCard({ segment, meta, onClose }: Props) {
     );
   }
 
-  const reasons = topReasons(p, meta.default_weights, 3);
+  const reasons = topReasons(p, weights ?? meta.default_weights, 3);
 
   const score = p.score ?? 0;
   const bandColor = colorForScore(score);

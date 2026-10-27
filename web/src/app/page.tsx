@@ -211,7 +211,6 @@ export default function Landing() {
 
       <footer className="border-t border-white/10 px-6 py-8 text-center text-xs text-neutral-500">
         {meta && <p>{copy.methodBox.dataSource(formatDate(meta.generated_at))}</p>}
-        {meta?.source === 'mock' && <p className="mt-1 text-red-400">{copy.methodBox.mockWarning}</p>}
       </footer>
     </div>
   );

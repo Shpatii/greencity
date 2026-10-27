@@ -1,13 +1,16 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "source": "atrai",
-  "generated_at": "2026-10-27T15:23:25+01:00",
+  "generated_at": "2026-10-27T16:17:21+01:00",
   "city": "heilbronn",
-  "n_segments": 7850,
-  "n_eligible": 5625,
+  "n_segments": 6642,
+  "n_eligible": 5106,
   "min_points": 5,
   "confidence_n": 30,
-  "danger_p95": 22.469,
+  "danger_p95": 17.879,
+  "city_share_below_150": 0.807,
+  "safety_prior_k": 10,
+  "danger_min_length_m": 50,
   "default_weights": {
     "safety": 0.35,
     "danger": 0.25,
@@ -16,9 +19,9 @@
     "flow": 0.1
   },
   "bbox": [
-    9.04796,
-    49.09375,
-    9.30149,
-    49.20964
+    9.16396,
+    49.11327,
+    9.25762,
+    49.18134
   ]
 }

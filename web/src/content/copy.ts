@@ -7,7 +7,6 @@ type FiveBands<T> = readonly [T, T, T, T, T];
 export interface Copy {
   appTitle: string;
   tagline: string;
-  mockBadge: string;
   loading: string;
   loadError: string;
   unnamed: string;
@@ -42,7 +41,13 @@ export interface Copy {
     limitsTitle: string;
     limits: readonly string[];
     dataSource: (generatedAt: string) => string;
-    mockWarning: string;
+  };
+  weightSliders: {
+    title: string;
+    hint: string;
+    reset: string;
+    /** Screen-reader label for one slider, e.g. "Close passes weight". */
+    sliderLabel: (factor: string) => string;
   };
   emptyStates: {
     noSegmentSelected: string;
@@ -93,7 +98,6 @@ export interface Copy {
 export const copy: Copy = {
   appTitle: 'SafeLane HN',
   tagline: 'Bike sensor rides show where Heilbronn should act first',
-  mockBadge: 'Mock data',
   loading: 'Loading data…',
   loadError: 'Could not load the map data.',
   unnamed: 'Unnamed street',
@@ -158,7 +162,13 @@ export const copy: Copy = {
       'Some streets have only a few measurements. Their scores are less certain, so check the confidence on each card.',
     ],
     dataSource: (generatedAt) => `Data: ATRAI senseBox:bike, generated ${generatedAt}`,
-    mockWarning: 'This is made-up test data, not real measurements. Do not draw conclusions from it.',
+  },
+
+  weightSliders: {
+    title: 'What matters most to you?',
+    hint: 'Move a slider and the map and top 10 update. The weights always add up to 100%.',
+    reset: 'Reset weights',
+    sliderLabel: (factor) => `${factor} weight`,
   },
 
   emptyStates: {

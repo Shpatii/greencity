@@ -1,0 +1,8 @@
+geopandas
+shapely
+pyproj
+requests
+pandas
+jsonschema
+pytest
+reportlab

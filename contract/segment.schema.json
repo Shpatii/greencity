@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SegmentProps",
+  "description": "Properties of one segments.geojson feature (CONTRACT.md section 3.2).",
+  "type": "object",
+  "$defs": {
+    "factorKey": {
+      "enum": ["safety", "danger", "surface", "air", "flow"]
+    },
+    "unit": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "unitOrNull": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "properties": {
+    "id": { "type": "string", "description": "Stable id, seg_000123" },
+    "osm_id": { "type": ["string", "null"], "description": "OSM way id from road_network_heilbronn" },
+    "name": { "type": ["string", "null"], "description": "Street name" },
+    "length_m": { "type": "number", "description": "Length in metres" },
+    "n_points": { "type": "integer", "description": "Max of the point counts of all matched layers" },
+    "n_overtakes": { "type": "integer", "description": "Sum of the overtaking histogram" },
+    "share_below_150": { "$ref": "#/$defs/unitOrNull", "description": "Share of overtakes under 150 cm (0-1)" },
+    "avg_overtake_cm": { "type": ["number", "null"], "description": "Average overtaking distance" },
+    "danger_per_100m": { "type": ["number", "null"], "description": "Danger points per 100 m" },
+    "mean_danger_risk": { "$ref": "#/$defs/unitOrNull", "description": "Mean Risk Index of danger points (0-1)" },
+    "mean_pm_risk": { "$ref": "#/$defs/unitOrNull", "description": "Mean Risk Index of PM danger points (0-1)" },
+    "roughness_norm": { "$ref": "#/$defs/unitOrNull", "description": "Normalized Roughness (0-1)" },
+    "traffic_flow": { "$ref": "#/$defs/unitOrNull", "description": "avg_traffic_flow (0-1, 1 = free flow)" },
+    "avg_speed_kmh": { "type": ["number", "null"], "description": "Average cycling speed" },
+    "f_safety": { "$ref": "#/$defs/unit" },
+    "f_danger": { "$ref": "#/$defs/unit" },
+    "f_surface": { "$ref": "#/$defs/unit" },
+    "f_air": { "$ref": "#/$defs/unit" },
+    "f_flow": { "$ref": "#/$defs/unit" },
+    "missing": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/factorKey" },
+      "uniqueItems": true,
+      "description": "Factor keys with no data"
+    },
+    "confidence": { "$ref": "#/$defs/unit" },
+    "eligible": { "type": "boolean", "description": "Enough data to rank" },
+    "score": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "0-100 with default weights; null if not eligible"
+    },
+    "rank": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "1 = highest priority; null if not eligible"
+    },
+    "reason_texts": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/factorKey" },
+      "additionalProperties": { "type": "string" },
+      "description": "Factor key -> one sentence, only for factors with data"
+    }
+  },
+  "required": [
+    "id", "osm_id", "name", "length_m", "n_points", "n_overtakes",
+    "share_below_150", "avg_overtake_cm", "danger_per_100m", "mean_danger_risk",
+    "mean_pm_risk", "roughness_norm", "traffic_flow", "avg_speed_kmh",
+    "f_safety", "f_danger", "f_surface", "f_air", "f_flow",
+    "missing", "confidence", "eligible", "score", "rank", "reason_texts"
+  ],
+  "additionalProperties": false,
+  "if": {
+    "properties": { "eligible": { "const": false } }
+  },
+  "then": {
+    "properties": { "score": { "type": "null" }, "rank": { "type": "null" } }
+  }
+}

@@ -57,6 +57,37 @@ export interface Copy {
     confidence: string;
     topReasons: string;
   };
+  nav: {
+    overview: string;
+    map: string;
+    method: string;
+    openMap: string;
+  };
+  landing: {
+    eyebrow: string;
+    headline: readonly [string, string];
+    intro: string;
+    ctaPrimary: string;
+    ctaSecondary: string;
+    heroCaption: string;
+    statsTitle: string;
+    stats: {
+      closeShare: string;
+      overtakes: string;
+      measured: string;
+      ranked: string;
+    };
+    signalsTitle: string;
+    signalsIntro: string;
+    weightLabel: string;
+    topTitle: string;
+    topIntro: string;
+    rankLabel: (rank: number) => string;
+    seeOnMap: string;
+    seeAll: string;
+    finalTitle: string;
+    finalIntro: string;
+  };
 }
 
 export const copy: Copy = {
@@ -143,5 +174,41 @@ export const copy: Copy = {
     overtakes: 'Overtakes',
     confidence: 'Confidence',
     topReasons: 'Top reasons',
+  },
+
+  nav: {
+    overview: 'Overview',
+    map: 'Map',
+    method: 'How it works',
+    openMap: 'Open map',
+  },
+
+  landing: {
+    eyebrow: 'Heilbronn · senseBox:bike',
+    headline: ['Every close pass.', 'On the map.'],
+    intro:
+      'Sensors on local bikes recorded how close cars came, how rough the road felt and how clean the air was. ' +
+      'SafeLane HN turns those rides into a list of streets to fix first.',
+    ctaPrimary: 'Open the map',
+    ctaSecondary: 'How it works',
+    heroCaption: 'Every line is a measured street section. Brighter means higher priority.',
+    statsTitle: 'What the riders measured.',
+    stats: {
+      closeShare: 'of recorded overtakes came closer than 1.5 m',
+      overtakes: 'overtakes recorded',
+      measured: 'street sections with data',
+      ranked: 'sections with enough data to rank',
+    },
+    signalsTitle: 'Five signals. One score.',
+    signalsIntro:
+      'Each street section is compared with the rest of the city on five signals, weighted, and added up to a score from 0 to 100.',
+    weightLabel: 'weight',
+    topTitle: 'Where to act first.',
+    topIntro: 'The three street sections with the highest priority right now.',
+    rankLabel: (rank) => `No. ${rank}`,
+    seeOnMap: 'See on map',
+    seeAll: 'See the full ranking',
+    finalTitle: 'See your street.',
+    finalIntro: 'Zoom in, tap a street, and see why it ranks where it does.',
   },
 };

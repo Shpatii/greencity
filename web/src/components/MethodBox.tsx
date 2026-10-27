@@ -27,7 +27,7 @@ export default function MethodBox({ weights, meta }: Props) {
   const text = copy.methodBox;
 
   return (
-    <section className="rounded border border-neutral-200">
+    <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
       <button
         type="button"
         aria-expanded={open}

@@ -15,7 +15,7 @@ export default function RankList({ segments, selectedId, setSelectedId }: Props)
     .slice(0, 10);
 
   return (
-    <section className="overflow-hidden rounded border border-gray-200 bg-white">
+    <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
       <div className="border-b border-gray-200 px-4 py-3">
         <h2 className="text-sm font-semibold text-gray-800">{copy.rankList.title}</h2>
       </div>
@@ -38,7 +38,7 @@ export default function RankList({ segments, selectedId, setSelectedId }: Props)
               <tr
                 key={p.id}
                 onClick={() => setSelectedId(p.id)}
-                className={`cursor-pointer border-b border-gray-50 transition-colors last:border-0 hover:bg-blue-50 ${
+                className={`cursor-pointer border-b border-gray-50 transition-colors last:border-0 hover:bg-neutral-50 ${
                   isSelected ? 'bg-blue-100' : ''
                 }`}
               >

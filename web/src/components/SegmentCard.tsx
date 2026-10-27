@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { SegmentFeature } from '@/lib/loadData';
-import type { Meta, FactorKey, SegmentProps } from '@/lib/types';
+import type { Meta } from '@/lib/types';
+import { topReasons } from '@/lib/stats';
 import { copy } from '@/content/copy';
 import { colorForScore } from '@/content/theme';
 
@@ -10,23 +11,13 @@ interface Props {
   onClose: () => void;
 }
 
-function factorValues(p: SegmentProps): Record<FactorKey, number> {
-  return {
-    safety: p.f_safety,
-    danger: p.f_danger,
-    surface: p.f_surface,
-    air: p.f_air,
-    flow: p.f_flow,
-  };
-}
-
 export default function SegmentCard({ segment, meta, onClose }: Props) {
   const p = segment.properties;
   const name = p.name ?? copy.unnamed;
 
   if (!p.eligible) {
     return (
-      <section className="overflow-hidden rounded border border-gray-200 bg-white">
+      <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
         <Header name={name} onClose={onClose} />
         <div className="space-y-1 px-4 py-4 text-sm text-gray-600">
           <p>{copy.emptyStates.noRank}</p>
@@ -36,24 +27,13 @@ export default function SegmentCard({ segment, meta, onClose }: Props) {
     );
   }
 
-  const w = meta.default_weights;
-  const fv = factorValues(p);
-
-  // Top-3 reason texts sorted by contribution (weight × factor value), descending
-  const topReasons = (Object.keys(p.reason_texts) as FactorKey[])
-    .map((k) => ({
-      key: k,
-      text: p.reason_texts[k]!,
-      contribution: w[k] * fv[k],
-    }))
-    .sort((a, b) => b.contribution - a.contribution)
-    .slice(0, 3);
+  const reasons = topReasons(p, meta.default_weights, 3);
 
   const score = p.score ?? 0;
   const bandColor = colorForScore(score);
 
   return (
-    <section className="overflow-hidden rounded border border-gray-200 bg-white">
+    <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
       <Header name={name} onClose={onClose} />
 
       <div className="px-4 py-4">
@@ -78,13 +58,13 @@ export default function SegmentCard({ segment, meta, onClose }: Props) {
         </dl>
 
         {/* Reason texts */}
-        {topReasons.length > 0 && (
+        {reasons.length > 0 && (
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
               {copy.cardLabels.topReasons}
             </p>
             <ul className="space-y-1.5">
-              {topReasons.map(({ key, text }) => (
+              {reasons.map(({ key, text }) => (
                 <li key={key} className="text-sm leading-snug text-gray-800">
                   {text}
                 </li>

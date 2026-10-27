@@ -1,0 +1,72 @@
+{
+  "generated_at": "2026-10-27T16:17:21+01:00",
+  "n_base_edges": 34243,
+  "n_twins_merged": 16192,
+  "match": {
+    "overtaking": {
+      "features": 1388,
+      "matched": 1388,
+      "share": 1.0
+    },
+    "roughness": {
+      "features": 9599,
+      "matched": 9599,
+      "share": 1.0
+    },
+    "traffic_flow": {
+      "features": 7153,
+      "matched": 7153,
+      "share": 1.0
+    },
+    "speed": {
+      "features": 7384,
+      "matched": 7384,
+      "share": 1.0
+    },
+    "danger": {
+      "features": 7095,
+      "matched": 5192,
+      "share": 0.7318
+    },
+    "danger_pm": {
+      "features": 183030,
+      "matched": 120210,
+      "share": 0.6568
+    }
+  },
+  "n_segments": 6642,
+  "n_points": {
+    "median": 16.0,
+    "ge_1": 6642,
+    "ge_5": 5106,
+    "ge_10": 4100,
+    "ge_30": 2388
+  },
+  "n_with_overtakes": 863,
+  "danger_p95": 17.879,
+  "city_share_below_150": 0.807,
+  "n_eligible": 5106,
+  "score": {
+    "max": 76.1,
+    "median": 9.8,
+    "bands": {
+      "0-20": 4313,
+      "20-40": 210,
+      "40-60": 497,
+      "60-80": 86,
+      "80-100": 0
+    }
+  },
+  "top10": [
+    "seg_032464",
+    "seg_028814",
+    "seg_011483",
+    "seg_001923",
+    "seg_021301",
+    "seg_003068",
+    "seg_028813",
+    "seg_011992",
+    "seg_033606",
+    "seg_012747"
+  ]
+}

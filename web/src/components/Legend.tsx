@@ -1,5 +1,5 @@
 import { copy } from '@/content/copy';
-import { noDataColor, scoreColors } from '@/content/theme';
+import { lineCasingColor, noDataColor, scoreColors } from '@/content/theme';
 
 // Compact horizontal legend: 5 score bands (low → high priority) plus a dashed "not enough data" sample.
 export default function Legend() {
@@ -28,7 +28,7 @@ export default function Legend() {
         <div className="flex w-20 shrink-0 flex-col">
           {/* Dashed line with a dark casing, like no-data streets on the map. */}
           <svg aria-hidden="true" viewBox="0 0 32 12" preserveAspectRatio="none" className="h-3 w-full">
-            <line x1="1" y1="6" x2="31" y2="6" stroke="#525252" strokeWidth="5" strokeDasharray="6 4" />
+            <line x1="1" y1="6" x2="31" y2="6" stroke={lineCasingColor} strokeWidth="5" strokeDasharray="6 4" />
             <line x1="1" y1="6" x2="31" y2="6" stroke={noDataColor} strokeWidth="3" strokeDasharray="6 4" />
           </svg>
           <span className="mt-1 text-xs leading-tight text-neutral-800">{noData}</span>

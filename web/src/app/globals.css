@@ -6,3 +6,16 @@ html,
 body {
   height: 100%;
 }
+
+/* MapLibre hover popup */
+.safelane-popup .maplibregl-popup-content {
+  padding: 6px 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.safelane-popup .maplibregl-popup-tip {
+  display: none;
+}

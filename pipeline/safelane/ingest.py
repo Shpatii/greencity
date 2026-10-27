@@ -11,6 +11,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from safelane import config
+from safelane.json_io import decode_source, read_source_json
 
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 USER_AGENT = "safelane-hn-hackathon"
@@ -43,7 +44,7 @@ def _get_json(session, path, params=None, max_seconds=None):
             chunks.append(chunk)
             if max_seconds and time.monotonic() - start > max_seconds:
                 raise TimeoutError(f"{path} took more than {max_seconds} s")
-    return json.loads(b"".join(chunks))
+    return json.loads(decode_source(b"".join(chunks), path))
 
 
 def _features(payload, path):
@@ -72,7 +73,7 @@ def _download_collection(name, retrying, single_shot):
 
 def _write_json(path, obj):
     tmp = path.with_suffix(path.suffix + ".part")
-    tmp.write_text(json.dumps(obj, ensure_ascii=False))
+    tmp.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
     tmp.replace(path)
 
 
@@ -151,7 +152,7 @@ def run(refresh=False):
         out = RAW_DIR / f"{name}.geojson"
         start = time.monotonic()
         if out.exists() and not refresh:
-            features, mode = _features(json.loads(out.read_text()), str(out)), "cached"
+            features, mode = _features(read_source_json(out), str(out)), "cached"
         else:
             features, mode = _download_collection(name, retrying, single_shot)
             _write_json(out, {"type": "FeatureCollection", "features": features})
@@ -164,6 +165,7 @@ def run(refresh=False):
         _write_json(campaign_out, _get_json(retrying, f"/campaigns/{CAMPAIGN}"))
         campaign_mode = "downloaded"
     else:
+        read_source_json(campaign_out)
         campaign_mode = "cached"
 
     inspect = RAW_DIR / "INSPECT.md"
@@ -174,7 +176,7 @@ def run(refresh=False):
         "Property keys are shown exactly as the API returns them.",
         "",
     ]
-    inspect.write_text("\n".join(header + sections))
+    inspect.write_text("\n".join(header + sections), encoding="utf-8")
 
     print(f"\n{'key':<13} {'collection':<31} {'features':>8}  {'geometry':<16} {'keys':>4}  {'source':<8} {'s':>5}")
     for key, name, n, geom, n_keys, mode, secs in rows:

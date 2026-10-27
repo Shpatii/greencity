@@ -24,7 +24,7 @@ def _coords(line):
 
 def _write_json(path, obj):
     tmp = path.with_suffix(path.suffix + ".part")
-    tmp.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")))
+    tmp.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     tmp.replace(path)
 
 

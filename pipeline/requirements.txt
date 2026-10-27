@@ -1,8 +1,13 @@
 geopandas
+pyogrio
 shapely
 pyproj
 requests
+urllib3
 pandas
+numpy
+# IANA timezone data for ZoneInfo, including on Windows.
+tzdata
 jsonschema
 pytest
 reportlab

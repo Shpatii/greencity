@@ -1,40 +1,24 @@
-/** Visual design tokens shared between the map (MapLibre expressions) and React UI. */
-export const theme = {
-  /** Colour for segments without enough data to score (eligible=false). */
-  noDataColor: '#94a3b8',
+// P4: colour scale for priority scores (0–100).
 
-  /**
-   * Five-stop colour ramp mapped to score 0-100.
-   * 0 = safest / lowest priority (green), 100 = most dangerous / highest priority (red).
-   * Used both in the MapLibre interpolation expression and for UI dots.
-   */
-  scoreColors: [
-    [0, '#22c55e'],
-    [25, '#84cc16'],
-    [50, '#eab308'],
-    [75, '#f97316'],
-    [100, '#ef4444'],
-  ] as [number, string][],
+// Inferno-style sequential ramp, low priority (light) → high priority (dark).
+// Lightness steps evenly (L* 85 → 17), so bands stay ordered under protan/deutan/tritan vision.
+// The lightest band is faint on the light basemap: draw lines with a thin dark casing.
+export const scoreColors = ['#fcd225', '#f98e09', '#dd513a', '#932667', '#420a68'] as const;
 
-  /** Highlight colours for the selected segment. */
-  highlightInner: '#3b82f6',
-  highlightOuter: '#1e3a8a',
-} as const;
+// Neutral grey for segments without a score. Pair it with a dashed line so it never relies on colour alone.
+export const noDataColor = '#9e9e9e';
 
-/**
- * Map a score (0-100) to the nearest stop colour.
- * Used for the coloured dot in RankList.
- */
-export function scoreToColor(score: number): string {
-  const stops = theme.scoreColors;
-  let best = stops[0];
-  let bestDiff = Math.abs(score - stops[0][0]);
-  for (const stop of stops) {
-    const diff = Math.abs(score - stop[0]);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      best = stop;
-    }
-  }
-  return best[1];
+// Dark casing drawn under score lines (and in the legend) so the light bands stay visible.
+export const lineCasingColor = '#525252';
+
+// Selected street: thick dark halo with a bright line on top.
+export const selectionColors = { halo: '#1e3a8a', line: '#3b82f6' } as const;
+
+// Lower bound of bands 2–5; band i covers [scoreBreaks[i-1], scoreBreaks[i]).
+export const scoreBreaks = [20, 40, 60, 80] as const;
+
+export function colorForScore(score: number | null): string {
+  if (score === null || !Number.isFinite(score)) return noDataColor;
+  const band = scoreBreaks.filter((b) => score >= b).length;
+  return scoreColors[band];
 }

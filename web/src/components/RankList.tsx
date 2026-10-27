@@ -1,6 +1,6 @@
 import type { SegmentFeature } from '@/lib/loadData';
 import { copy } from '@/content/copy';
-import { scoreToColor } from '@/content/theme';
+import { colorForScore } from '@/content/theme';
 
 interface Props {
   segments: SegmentFeature[];
@@ -15,14 +15,14 @@ export default function RankList({ segments, selectedId, setSelectedId }: Props)
     .slice(0, 10);
 
   return (
-    <div className="overflow-hidden rounded-xl bg-white/90 shadow-lg backdrop-blur-sm">
+    <section className="overflow-hidden rounded border border-gray-200 bg-white">
       <div className="border-b border-gray-200 px-4 py-3">
         <h2 className="text-sm font-semibold text-gray-800">{copy.rankList.title}</h2>
       </div>
 
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-100 text-xs text-gray-400">
+          <tr className="border-b border-gray-100 text-xs text-gray-600">
             <th className="w-8 px-4 py-2 text-left font-medium">{copy.rankList.colRank}</th>
             <th className="px-2 py-2 text-left font-medium">{copy.rankList.colName}</th>
             <th className="px-2 py-2 text-right font-medium">{copy.rankList.colScore}</th>
@@ -42,24 +42,24 @@ export default function RankList({ segments, selectedId, setSelectedId }: Props)
                   isSelected ? 'bg-blue-100' : ''
                 }`}
               >
-                <td className="w-8 px-4 py-2.5 font-mono text-xs text-gray-400">
+                <td className="w-8 px-4 py-2.5 font-mono text-xs text-gray-600">
                   {p.rank}
                 </td>
-                <td className="max-w-[120px] truncate px-2 py-2.5 text-gray-800">
+                <td className="max-w-[220px] truncate px-2 py-2.5 text-gray-800">
                   {p.name ?? copy.unnamed}
                 </td>
                 <td className="px-2 py-2.5 text-right">
                   <span className="inline-flex items-center gap-1">
                     <span
-                      className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
-                      style={{ backgroundColor: scoreToColor(score) }}
+                      className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full ring-1 ring-inset ring-black/40"
+                      style={{ backgroundColor: colorForScore(score) }}
                     />
                     <span className="font-medium tabular-nums text-gray-800">
                       {score.toFixed(1)}
                     </span>
                   </span>
                 </td>
-                <td className="px-3 py-2.5 text-right font-mono text-xs text-gray-500">
+                <td className="px-3 py-2.5 text-right font-mono text-xs text-gray-600">
                   {p.n_points}
                 </td>
               </tr>
@@ -67,6 +67,9 @@ export default function RankList({ segments, selectedId, setSelectedId }: Props)
           })}
         </tbody>
       </table>
-    </div>
+      {top10.length === 0 && (
+        <p className="px-4 py-3 text-sm text-gray-600">{copy.emptyStates.noEligibleSegments}</p>
+      )}
+    </section>
   );
 }

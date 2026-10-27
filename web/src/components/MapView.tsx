@@ -1,14 +1,38 @@
 'use client';
+
 import { useEffect, useRef } from 'react';
-import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import type { FeatureCollection } from 'geojson';
-import type { SegmentFeature } from '@/lib/loadData';
+import * as maplibregl from 'maplibre-gl';
+import type { SegmentCollection, SegmentFeature } from '@/lib/loadData';
 import type { Meta, SegmentProps } from '@/lib/types';
-import { theme } from '@/content/theme';
+import {
+  lineCasingColor,
+  noDataColor,
+  scoreBreaks,
+  scoreColors,
+  selectionColors,
+} from '@/content/theme';
 import { copy } from '@/content/copy';
 
-const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+const CENTER: [number, number] = [9.2109, 49.1427];
+const ZOOM = 13;
+
+// maplibre v6 resolves its worker relative to its own module URL, which webpack breaks.
+// `npm run copy-worker` (runs before dev/build) puts it in public/.
+maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs');
+
+const LINE_WIDTH: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 12, 2, 14, 3, 16, 5];
+const CASING_WIDTH: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 12, 3.5, 14, 4.5, 16, 7];
+
+// Same bands as the legend: step through scoreBreaks.
+const SCORE_COLOR: maplibregl.ExpressionSpecification = [
+  'step',
+  ['coalesce', ['get', 'score'], 0],
+  scoreColors[0],
+  ...scoreBreaks.flatMap((b, i) => [b, scoreColors[i + 1]]),
+];
+
+const NO_MATCH: maplibregl.FilterSpecification = ['==', ['get', 'id'], ''];
 
 interface Props {
   segments: SegmentFeature[];
@@ -17,142 +41,106 @@ interface Props {
   setSelectedId: (id: string | null) => void;
 }
 
+function toCollection(segments: SegmentFeature[]): SegmentCollection {
+  return { type: 'FeatureCollection', features: segments };
+}
+
 export default function MapView({ segments, meta, selectedId, setSelectedId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const readyRef = useRef(false);
-  // Keep latest selectedId accessible inside map callbacks without re-running the init effect
-  const selectedIdRef = useRef<string | null>(selectedId);
+  // Latest props for map callbacks, without re-running the init effect.
+  const segmentsRef = useRef(segments);
+  segmentsRef.current = segments;
+  const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
 
-  // ── Init once ──────────────────────────────────────────────────────────────
+  // Create the map once.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const [minLng, minLat, maxLng, maxLat] = meta.bbox;
-
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: MAP_STYLE,
-      bounds: [
-        [minLng, minLat],
-        [maxLng, maxLat],
-      ],
-      fitBoundsOptions: { padding: 40 },
+      style: STYLE_URL,
+      center: CENTER,
+      zoom: ZOOM,
     });
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
     mapRef.current = map;
 
-    const popup = new maplibregl.Popup({
-      closeButton: false,
-      closeOnClick: false,
-      className: 'safelane-popup',
-    });
+    const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'safelane-popup' });
 
     map.on('load', () => {
       readyRef.current = true;
 
-      const featureCollection: FeatureCollection = {
-        type: 'FeatureCollection',
-        features: segments as unknown as FeatureCollection['features'],
-      };
+      map.addSource('segments', { type: 'geojson', data: toCollection(segmentsRef.current), promoteId: 'id' });
 
-      map.addSource('segments', {
-        type: 'geojson',
-        data: featureCollection,
-        promoteId: 'id',
-      });
-
-      // ── Layer 1: no-data segments (eligible=false) — dashed grey ────────
+      // Not enough data: dashed grey.
       map.addLayer({
         id: 'segments-noData',
         type: 'line',
         source: 'segments',
         filter: ['!', ['get', 'eligible']],
-        paint: {
-          'line-color': theme.noDataColor,
-          'line-width': 2,
-          'line-dasharray': [2, 2],
-        },
+        paint: { 'line-color': noDataColor, 'line-width': 2, 'line-dasharray': [2, 2] },
       });
 
-      // ── Layer 2: eligible segments — interpolated score colour ───────────
-      const colorStops = theme.scoreColors.flatMap(([stop, color]) => [stop, color]);
+      // Eligible: dark casing, then the band colour on top.
+      map.addLayer({
+        id: 'segments-casing',
+        type: 'line',
+        source: 'segments',
+        filter: ['get', 'eligible'],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': lineCasingColor, 'line-width': CASING_WIDTH },
+      });
       map.addLayer({
         id: 'segments-line',
         type: 'line',
         source: 'segments',
         filter: ['get', 'eligible'],
-        paint: {
-          'line-color': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', 'score'], 0],
-            ...colorStops,
-          ] as maplibregl.ExpressionSpecification,
-          'line-width': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            14, 3,
-            16, 5,
-          ] as maplibregl.ExpressionSpecification,
-        },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': SCORE_COLOR, 'line-width': LINE_WIDTH },
       });
 
-      // ── Layer 3: selection highlight — outer/border ──────────────────────
+      // Selected street: halo + line.
       map.addLayer({
         id: 'segments-highlight-outer',
         type: 'line',
         source: 'segments',
-        filter: ['==', ['get', 'id'], ''],
-        paint: {
-          'line-color': theme.highlightOuter,
-          'line-width': 12,
-        },
+        filter: NO_MATCH,
+        paint: { 'line-color': selectionColors.halo, 'line-width': 12 },
       });
-
-      // ── Layer 4: selection highlight — inner fill ────────────────────────
       map.addLayer({
         id: 'segments-highlight',
         type: 'line',
         source: 'segments',
-        filter: ['==', ['get', 'id'], ''],
-        paint: {
-          'line-color': theme.highlightInner,
-          'line-width': 8,
-        },
+        filter: NO_MATCH,
+        paint: { 'line-color': selectionColors.line, 'line-width': 8 },
       });
 
-      // ── Layer 5: invisible hit layer on top (12 px wide, opacity 0) ──────
+      // Invisible, wider hit layer on top so thin lines are easy to hover and click.
       map.addLayer({
         id: 'segments-hit',
         type: 'line',
         source: 'segments',
-        paint: {
-          'line-width': 12,
-          'line-opacity': 0,
-        },
+        paint: { 'line-width': 12, 'line-opacity': 0 },
       });
 
-      // Apply any selectedId that arrived before the map was ready
-      if (selectedIdRef.current) {
-        applySelected(map, selectedIdRef.current, segments);
-      }
+      map.fitBounds(meta.bbox, { padding: 24, duration: 0 });
 
-      // ── Hover: cursor + popup ────────────────────────────────────────────
+      if (selectedIdRef.current) applySelected(map, selectedIdRef.current, segmentsRef.current);
+
       map.on('mousemove', 'segments-hit', (e) => {
         if (!e.features?.length) return;
         map.getCanvas().style.cursor = 'pointer';
-        const props = e.features[0].properties as SegmentProps;
-        const name = props.name ?? copy.unnamed;
-        const score =
-          props.eligible && props.score != null
-            ? Number(props.score).toFixed(1)
-            : copy.noScore;
-        popup
-          .setLngLat(e.lngLat)
-          .setHTML(`<strong>${name}</strong>${copy.popup.separator}${score}`)
-          .addTo(map);
+        const p = e.features[0].properties as SegmentProps;
+        const score = p.eligible && p.score != null ? Number(p.score).toFixed(1) : copy.noScore;
+        // Build the popup with text nodes: street names come from data, never inject them as HTML.
+        const content = document.createElement('div');
+        const name = document.createElement('strong');
+        name.textContent = p.name ?? copy.unnamed;
+        content.append(name, `${copy.popup.separator}${score}`);
+        popup.setLngLat(e.lngLat).setDOMContent(content).addTo(map);
       });
 
       map.on('mouseleave', 'segments-hit', () => {
@@ -160,23 +148,28 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
         popup.remove();
       });
 
-      // ── Click: select segment ────────────────────────────────────────────
       map.on('click', 'segments-hit', (e) => {
         if (!e.features?.length) return;
-        const props = e.features[0].properties as SegmentProps;
-        setSelectedId(props.id);
+        setSelectedId((e.features[0].properties as SegmentProps).id);
       });
     });
 
     return () => {
       readyRef.current = false;
+      popup.remove();
       map.remove();
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Sync selectedId → map (filter + flyTo) ────────────────────────────────
+  // Push new data (e.g. re-scored by the sliders) into the existing source.
+  useEffect(() => {
+    const source = mapRef.current?.getSource('segments') as maplibregl.GeoJSONSource | undefined;
+    source?.setData(toCollection(segments));
+  }, [segments]);
+
+  // Sync selectedId → highlight filter + fly to the street.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !readyRef.current) return;
@@ -192,25 +185,14 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
   );
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function applySelected(
-  map: maplibregl.Map,
-  id: string | null,
-  segments: SegmentFeature[],
-): void {
-  const filter: maplibregl.FilterSpecification = id
-    ? ['==', ['get', 'id'], id]
-    : ['==', ['get', 'id'], ''];
-
+function applySelected(map: maplibregl.Map, id: string | null, segments: SegmentFeature[]): void {
+  const filter: maplibregl.FilterSpecification = id ? ['==', ['get', 'id'], id] : NO_MATCH;
   map.setFilter('segments-highlight', filter);
   map.setFilter('segments-highlight-outer', filter);
 
   if (!id) return;
-
   const feature = segments.find((f) => f.properties.id === id);
   if (!feature) return;
-
   const coords = feature.geometry.coordinates;
   const [lng, lat] = coords[Math.floor(coords.length / 2)];
   map.flyTo({ center: [lng, lat], zoom: 16 });

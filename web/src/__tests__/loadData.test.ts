@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+// jsdom has no global fetch to spy on; Node 18+ does.
 import { loadData } from '@/lib/loadData';
 
 const mockMeta = {
@@ -79,8 +83,9 @@ describe('loadData', () => {
     const { segments, meta } = await loadData();
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(meta.city).toBe('heilbronn');
-    expect(segments).toHaveLength(1);
-    expect(segments[0].properties.id).toBe('seg_001');
+    expect(segments.type).toBe('FeatureCollection');
+    expect(segments.features).toHaveLength(1);
+    expect(segments.features[0].properties.id).toBe('seg_001');
   });
 
   it('throws when a fetch fails', async () => {
@@ -90,6 +95,6 @@ describe('loadData', () => {
 
   it('returns features with correct geometry type', async () => {
     const { segments } = await loadData();
-    expect(segments[0].geometry.type).toBe('LineString');
+    expect(segments.features[0].geometry.type).toBe('LineString');
   });
 });

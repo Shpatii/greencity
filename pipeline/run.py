@@ -12,6 +12,7 @@ def main():
     parser.add_argument("--score", action="store_true", help="confidence, eligible, score, rank, reason_texts")
     parser.add_argument("--publish", action="store_true", help="write data/out/, copy to web/public/data/")
     parser.add_argument("--all", action="store_true", help="run every step in order")
+    parser.add_argument("--refresh", action="store_true", help="re-download data/raw/ even if cached")
     args = parser.parse_args()
 
     if not (args.ingest or args.fuse or args.score or args.publish or args.all):
@@ -19,7 +20,7 @@ def main():
         return
 
     if args.all or args.ingest:
-        ingest.run()
+        ingest.run(refresh=args.refresh)
     if args.all or args.fuse:
         fuse.run()
     if args.all or args.score:

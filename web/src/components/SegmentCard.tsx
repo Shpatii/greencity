@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { SegmentFeature } from '@/lib/loadData';
 import type { Meta, FactorKey, SegmentProps } from '@/lib/types';
+import { segmentLabel, osmWayUrl } from '@/lib/segmentLabel';
 import { copy } from '@/content/copy';
 import { scoreToColor } from '@/content/theme';
 
@@ -22,12 +23,13 @@ function factorValues(p: SegmentProps): Record<FactorKey, number> {
 
 export default function SegmentCard({ segment, meta, onClose }: Props) {
   const p = segment.properties;
-  const name = p.name ?? copy.unnamed;
+  const name = segmentLabel(p);
+  const osmUrl = osmWayUrl(p.osm_id);
 
   if (!p.eligible) {
     return (
       <div className="overflow-hidden rounded-xl bg-white/90 shadow-lg backdrop-blur-sm">
-        <Header name={name} onClose={onClose} />
+        <Header name={name} osmUrl={osmUrl} onClose={onClose} />
         <div className="space-y-1 px-4 py-4 text-sm text-gray-500">
           <p>{copy.emptyStates.noRank}</p>
           <p>{copy.emptyStates.notEnoughMeasurements}</p>
@@ -54,7 +56,7 @@ export default function SegmentCard({ segment, meta, onClose }: Props) {
 
   return (
     <div className="overflow-hidden rounded-xl bg-white/90 shadow-lg backdrop-blur-sm">
-      <Header name={name} onClose={onClose} />
+      <Header name={name} osmUrl={osmUrl} onClose={onClose} />
 
       <div className="px-4 py-4">
         {/* Score — large display */}
@@ -96,10 +98,30 @@ export default function SegmentCard({ segment, meta, onClose }: Props) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function Header({ name, onClose }: { name: string; onClose: () => void }) {
+function Header({
+  name,
+  osmUrl,
+  onClose,
+}: {
+  name: string;
+  osmUrl: string | null;
+  onClose: () => void;
+}) {
   return (
     <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-      <h2 className="max-w-[200px] truncate text-sm font-semibold text-gray-800">{name}</h2>
+      <div className="flex min-w-0 items-baseline gap-2">
+        <h2 className="truncate text-sm font-semibold text-gray-800">{name}</h2>
+        {osmUrl && (
+          <a
+            href={osmUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-shrink-0 text-[11px] font-medium text-blue-600 underline-offset-2 hover:underline"
+          >
+            {copy.osmLink}
+          </a>
+        )}
+      </div>
       <button
         onClick={onClose}
         aria-label={copy.close}

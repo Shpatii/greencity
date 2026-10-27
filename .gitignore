@@ -28,5 +28,8 @@ yarn-error.log*
 # Data (data/out/ and web/public/data/ are committed)
 data/raw/
 
+# IDE
+.idea/
+
 # OS
 .DS_Store

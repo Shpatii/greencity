@@ -42,10 +42,16 @@ function makeSegment(overrides: Partial<SegmentProps>): SegmentFeature {
 
 describe('RankList', () => {
   it('renders heading and column labels', () => {
-    render(<RankList segments={[]} selectedId={null} setSelectedId={jest.fn()} />);
+    render(<RankList segments={[makeSegment({})]} selectedId={null} setSelectedId={jest.fn()} />);
     expect(screen.getByText('Top 10 priority streets')).toBeInTheDocument();
     expect(screen.getByText('Street')).toBeInTheDocument();
     expect(screen.getByText('Score')).toBeInTheDocument();
+  });
+
+  it('shows the empty state when no segment is eligible', () => {
+    render(<RankList segments={[]} selectedId={null} setSelectedId={jest.fn()} />);
+    expect(screen.getByText(/No street has enough measurements/)).toBeInTheDocument();
+    expect(screen.queryByText('Street')).not.toBeInTheDocument();
   });
 
   it('renders top-10 eligible segments sorted by rank', () => {

@@ -1,5 +1,5 @@
 """P1: download + cache to data/raw/."""
 
 
-def run():
+def run(refresh=False):
     print("ingest")

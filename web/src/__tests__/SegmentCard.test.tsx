@@ -106,9 +106,22 @@ describe('SegmentCard', () => {
     expect(container.querySelectorAll('li')).toHaveLength(3);
   });
 
-  it('shows "Unnamed street" when name is null', () => {
+  it('shows "Unnamed street" + first 3 id digits when name is null', () => {
     render(<SegmentCard segment={makeFeature({ name: null })} meta={meta} onClose={jest.fn()} />);
-    expect(screen.getAllByText('Unnamed street').length).toBeGreaterThan(0);
+    expect(screen.getByText('Unnamed street 001')).toBeInTheDocument();
+  });
+
+  it('links to the first OSM way when osm_id is present', () => {
+    render(<SegmentCard segment={makeFeature({ osm_id: '4711, 4712' })} meta={meta} onClose={jest.fn()} />);
+    expect(screen.getByRole('link', { name: 'OSM' })).toHaveAttribute(
+      'href',
+      'https://www.openstreetmap.org/way/4711',
+    );
+  });
+
+  it('has no OSM link when osm_id is null', () => {
+    render(<SegmentCard segment={makeFeature({})} meta={meta} onClose={jest.fn()} />);
+    expect(screen.queryByRole('link', { name: 'OSM' })).not.toBeInTheDocument();
   });
 
   it('shows ineligible state with copy text when not eligible', () => {

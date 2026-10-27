@@ -53,6 +53,8 @@ const mockGeoJSON = {
 
 describe('loadData', () => {
   beforeEach(() => {
+    // jsdom has no fetch; give spyOn something to wrap.
+    if (!global.fetch) global.fetch = jest.fn();
     jest.spyOn(global, 'fetch').mockImplementation((url) => {
       const u = url as string;
       if (u.includes('segments.geojson')) {

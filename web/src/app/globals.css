@@ -4,10 +4,17 @@
 
 html,
 body {
-  height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+}
+
+/* Desktop is one fixed screen (only the sidebar scrolls); mobile scrolls the page. */
+@media (min-width: 768px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
 }
 
 /* MapLibre popup styling */

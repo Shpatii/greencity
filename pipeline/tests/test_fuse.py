@@ -1,6 +1,6 @@
 import pytest
 
-from safelane.fuse import factors, parse_histogram, share_below_150
+from safelane.fuse import factors, parse_histogram, parse_list, path_name, share_below_150
 
 
 def metrics(**overrides):
@@ -61,3 +61,12 @@ def test_zero_metric_is_not_missing():
     f, missing = factors(metrics(danger_per_100m=0.0, traffic_flow=1.0), danger_p95=4.0)
     assert missing == []
     assert f["f_danger"] == 0.0 and f["f_flow"] == 0.0
+
+
+def test_list_name_takes_first_street():
+    assert parse_list("['Saarlandstraße', 'Peter-Bruckmann-Brücke']")[0] == "Saarlandstraße"
+    assert parse_list("Theodor-Heuss-Straße") == ["Theodor-Heuss-Straße"]
+
+
+def test_path_name():
+    assert path_name("Austraße") == "Path along Austraße"

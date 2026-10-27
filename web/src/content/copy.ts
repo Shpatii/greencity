@@ -1,2 +1,96 @@
 // P4: all user-facing text.
-export const copy = {};
+// TODO(de): add German copy as `copyDe: Copy` and pick by locale.
+import type { FactorKey } from '@/lib/types';
+
+type FiveBands<T> = readonly [T, T, T, T, T];
+
+export interface Copy {
+  appTitle: string;
+  tagline: string;
+  mockBadge: string;
+  factorLabels: Record<FactorKey, string>;
+  factorTooltips: Record<FactorKey, string>;
+  legend: {
+    title: string;
+    // Ordered low → high priority; matches scoreColors / scoreBreaks in theme.ts.
+    bands: FiveBands<{ label: string; range: string }>;
+    noData: string;
+  };
+  methodBox: {
+    title: string;
+    explanation: string;
+    limitsTitle: string;
+    limits: readonly string[];
+  };
+  emptyStates: {
+    noSegmentSelected: string;
+    noEligibleSegments: string;
+  };
+  cardLabels: {
+    measurements: string;
+    overtakes: string;
+    confidence: string;
+    topReasons: string;
+  };
+}
+
+export const copy: Copy = {
+  appTitle: 'SafeLane HN',
+  tagline: 'Bike sensor rides show where Heilbronn should act first',
+  mockBadge: 'Mock data',
+
+  factorLabels: {
+    safety: 'Close passes',
+    danger: 'Danger spots',
+    surface: 'Rough surface',
+    air: 'Fine dust',
+    flow: 'Stop-and-go',
+  },
+
+  factorTooltips: {
+    safety: 'Share of passing vehicles that came closer than 1.5 m, the legal minimum in town.',
+    danger: 'How many very close, risky passes were recorded per 100 m of street.',
+    surface: 'How bumpy the ride is, based on how much the bike shakes. Potholes and cobbles score high.',
+    air: 'How much fine dust was in the air on this street, compared with the rest of Heilbronn.',
+    flow: 'How often riders had to stop and start again, for example at lights or in jams.',
+  },
+
+  legend: {
+    title: 'Safety priority',
+    bands: [
+      { label: 'Very low', range: '0–20' },
+      { label: 'Low', range: '20–40' },
+      { label: 'Medium', range: '40–60' },
+      { label: 'High', range: '60–80' },
+      { label: 'Very high', range: '80–100' },
+    ],
+    noData: 'Not enough data',
+  },
+
+  methodBox: {
+    title: 'How the score works',
+    explanation:
+      'Local riders cycled Heilbronn with senseBox:bike sensors. For each street section we look at five things: ' +
+      'close passes by cars, risky near misses, bumpy surface, fine dust and stop-and-go traffic. Each is compared ' +
+      'with the rest of the city, weighted by the sliders and added up to a score from 0 to 100. ' +
+      'Higher means: look at this street first.',
+    limitsTitle: 'What this data cannot tell you',
+    limits: [
+      'Riders chose their own routes, so popular streets have more data. A street with no data is not safe, just unmeasured.',
+      'Passing cars are detected by AI. It misses some and miscounts others, so a single value can be off.',
+      'Some streets have only a few measurements. Their scores are less certain, so check the confidence on each card.',
+    ],
+  },
+
+  emptyStates: {
+    noSegmentSelected: 'Select a street on the map or in the list to see why it ranks where it does.',
+    noEligibleSegments: 'No street has enough measurements for a score yet. More rides will fill the map.',
+  },
+
+  cardLabels: {
+    measurements: 'Measurements',
+    overtakes: 'Overtakes',
+    confidence: 'Confidence',
+    topReasons: 'Top reasons',
+  },
+};

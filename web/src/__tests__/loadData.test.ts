@@ -5,8 +5,8 @@
 import { loadData } from '@/lib/loadData';
 
 const mockMeta = {
-  version: '1.0',
-  source: 'mock',
+  version: '1.1',
+  source: 'atrai',
   generated_at: '2026-10-27T12:00:00+01:00',
   city: 'heilbronn',
   n_segments: 2,
@@ -14,6 +14,9 @@ const mockMeta = {
   min_points: 5,
   confidence_n: 30,
   danger_p95: 6.89,
+  city_share_below_150: 0.41,
+  safety_prior_k: 10,
+  danger_min_length_m: 50,
   default_weights: { safety: 0.35, danger: 0.25, surface: 0.15, air: 0.15, flow: 0.1 },
   bbox: [9.17, 49.11, 9.25, 49.17] as [number, number, number, number],
 };

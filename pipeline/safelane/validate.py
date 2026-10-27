@@ -1,10 +1,12 @@
 """P3: check output against the contract.
 
-    python -m safelane.validate PATH [--mode factors-only|full]
+    python -m safelane.validate PATH [--mode factors-only|full] [--expect-source atrai|mock]
 
 PATH is a segments.geojson (or the directory holding it); meta.json is read from
 the same directory in full mode. factors-only checks P1's output before scoring
-(I3); full checks scored data (I2, I4). Exit code 1 on any failure.
+(I3); full checks scored data (I2, I4) and fails when nothing is eligible.
+--expect-source fails when meta.source differs (catches mock data left in place).
+Exit code 1 on any failure.
 """
 import argparse
 import copy
@@ -71,6 +73,8 @@ def check_ranks_and_meta(features, meta):
     errors = []
     props = [f.get("properties") or {} for f in features]
     eligible = [p for p in props if p.get("eligible") is True]
+    if props and not eligible:
+        errors.append("no eligible segments: data is unscored (run `python run.py --score`)")
     ranks = sorted(p.get("rank") for p in eligible if isinstance(p.get("rank"), int))
     expected = list(range(1, len(eligible) + 1))
     if ranks != expected:
@@ -86,7 +90,7 @@ def check_ranks_and_meta(features, meta):
     return errors
 
 
-def validate(path, mode="full"):
+def validate(path, mode="full", expect_source=None):
     """Return (features, errors) for the segments.geojson at path."""
     path = Path(path)
     if path.is_dir():
@@ -97,6 +101,11 @@ def validate(path, mode="full"):
         meta_path = path.parent / "meta.json"
         meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else None
         errors += check_ranks_and_meta(features, meta)
+    if expect_source:
+        meta_path = path.parent / "meta.json"
+        source = json.loads(meta_path.read_text(encoding="utf-8")).get("source") if meta_path.exists() else None
+        if source != expect_source:
+            errors.append(f"meta.source = {source!r}, expected {expect_source!r}")
     return features, errors
 
 
@@ -104,9 +113,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Check segments.geojson against the contract")
     parser.add_argument("path", help="segments.geojson or the directory holding it")
     parser.add_argument("--mode", choices=["factors-only", "full"], default="full")
+    parser.add_argument("--expect-source", choices=["atrai", "mock"])
     args = parser.parse_args(argv)
 
-    features, errors = validate(args.path, args.mode)
+    features, errors = validate(args.path, args.mode, args.expect_source)
     n_eligible = sum(1 for f in features if (f.get("properties") or {}).get("eligible") is True)
     print(f"{args.path} ({args.mode}): {len(features)} features"
           + (f", {n_eligible} eligible" if args.mode == "full" else ""))

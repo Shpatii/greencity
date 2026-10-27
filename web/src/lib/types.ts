@@ -15,7 +15,8 @@ export interface SegmentProps {
 }
 
 export interface Meta {
-  version: string; source: 'mock' | 'atrai'; generated_at: string; city: string;
+  version: string; source: 'atrai'; generated_at: string; city: string;
   n_segments: number; n_eligible: number; min_points: number; confidence_n: number;
-  danger_p95: number; default_weights: Weights; bbox: [number, number, number, number];
+  danger_p95: number; city_share_below_150: number; safety_prior_k: number;
+  danger_min_length_m: number; default_weights: Weights; bbox: [number, number, number, number];
 }

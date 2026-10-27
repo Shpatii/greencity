@@ -29,6 +29,8 @@ FACTOR_DRIVERS = {
     "flow": "traffic_flow",
 }
 ROUND_EPS = 1e-6
+# Lower bounds of the legend bands (web/src/content/theme.ts scoreBreaks), for stats.json.
+SCORE_BANDS = (0, 20, 40, 60, 80)
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "data" / "out"
@@ -58,7 +60,8 @@ def reason_texts(row):
     """Factor key -> one plain English sentence, only for factors with data."""
     templates = {
         "safety": lambda r: (f"{r['share_below_150']:.0%} of {int(r['n_overtakes'])} "
-                             f"overtakes were closer than 150 cm"),
+                             f"overtake{'' if int(r['n_overtakes']) == 1 else 's'} "
+                             f"{'was' if int(r['n_overtakes']) == 1 else 'were'} closer than 150 cm"),
         "danger": lambda r: f"{r['danger_per_100m']:.1f} close-overtake danger points per 100 m",
         "surface": lambda r: f"rough surface (roughness {r['roughness_norm']:.2f} of 1)",
         "air": lambda r: f"elevated fine-dust risk ({r['mean_pm_risk']:.2f} of 1)",
@@ -115,10 +118,27 @@ def props_records(df):
 
 
 def write_geojson(path, features):
-    # One feature per line keeps git diffs readable.
-    lines = ",\n".join(json.dumps(f, ensure_ascii=False) for f in features)
-    Path(path).write_text('{"type": "FeatureCollection", "features": [\n' + lines + "\n]}\n",
+    # One feature per line keeps git diffs readable; compact separators keep the file small.
+    lines = ",\n".join(json.dumps(f, ensure_ascii=False, separators=(",", ":")) for f in features)
+    Path(path).write_text('{"type":"FeatureCollection","features":[\n' + lines + "\n]}\n",
                           encoding="utf-8")
+
+
+def score_stats(scored):
+    """Score part of stats.json: eligible count, score spread, legend band counts, top-10 ids."""
+    el = scored[scored["eligible"]]
+    scores = el["score"].astype(float)
+    uppers = SCORE_BANDS[1:] + (100.1,)  # last band includes 100
+    bands = {f"{lo}-{min(hi, 100):g}": int(((scores >= lo) & (scores < hi)).sum())
+             for lo, hi in zip(SCORE_BANDS, uppers)}
+    top = el.sort_values("rank").head(10)
+    return {
+        "n_eligible": int(len(el)),
+        "score": {"max": float(scores.max()) if len(el) else None,
+                  "median": float(scores.median()) if len(el) else None,
+                  "bands": bands},
+        "top10": top["id"].tolist(),
+    }
 
 
 def run(out_dir=OUT_DIR):
@@ -145,4 +165,9 @@ def run(out_dir=OUT_DIR):
         meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
     else:
         print(f"warning: {meta_path} not found, n_eligible not recorded")
+    stats_path = Path(out_dir) / "stats.json"
+    if stats_path.exists():
+        stats = json.loads(stats_path.read_text(encoding="utf-8"))
+        stats.update(score_stats(scored))
+        stats_path.write_text(json.dumps(stats, indent=2) + "\n", encoding="utf-8")
     print(f"score: {len(features)} segments, {n_eligible} eligible -> {seg_path}")

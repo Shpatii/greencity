@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
 import type { SegmentFeature } from '@/lib/loadData';
-import type { Meta, FactorKey, SegmentProps } from '@/lib/types';
+import type { Meta, FactorKey, SegmentProps, Weights } from '@/lib/types';
 import { copy } from '@/content/copy';
 import { colorForScore } from '@/content/theme';
 
 interface Props {
   segment: SegmentFeature;
   meta: Meta;
+  /** Current slider weights; defaults to meta.default_weights. */
+  weights?: Weights;
   onClose: () => void;
 }
 
@@ -20,7 +22,7 @@ function factorValues(p: SegmentProps): Record<FactorKey, number> {
   };
 }
 
-export default function SegmentCard({ segment, meta, onClose }: Props) {
+export default function SegmentCard({ segment, meta, weights, onClose }: Props) {
   const p = segment.properties;
   const name = p.name ?? copy.unnamed;
 
@@ -36,7 +38,7 @@ export default function SegmentCard({ segment, meta, onClose }: Props) {
     );
   }
 
-  const w = meta.default_weights;
+  const w = weights ?? meta.default_weights;
   const fv = factorValues(p);
 
   // Top-3 reason texts sorted by contribution (weight × factor value), descending

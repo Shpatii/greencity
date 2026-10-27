@@ -34,6 +34,15 @@ const SCORE_COLOR: maplibregl.ExpressionSpecification = [
 
 const NO_MATCH: maplibregl.FilterSpecification = ['==', ['get', 'id'], ''];
 
+// Higher scores draw on top, so a high-priority street is never hidden under an overlapping line.
+const SORT_BY_SCORE: maplibregl.DataDrivenPropertyValueSpecification<number> = ['coalesce', ['get', 'score'], -1];
+
+/** Under the cursor, the line with the highest score wins (matches the draw order). */
+function pickTop(features: maplibregl.MapGeoJSONFeature[]): SegmentProps {
+  const score = (f: maplibregl.MapGeoJSONFeature) => Number(f.properties.score ?? -1);
+  return features.reduce((best, f) => (score(f) > score(best) ? f : best)).properties as SegmentProps;
+}
+
 interface Props {
   segments: SegmentFeature[];
   meta: Meta;
@@ -90,7 +99,7 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
         type: 'line',
         source: 'segments',
         filter: ['get', 'eligible'],
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        layout: { 'line-cap': 'round', 'line-join': 'round', 'line-sort-key': SORT_BY_SCORE },
         paint: { 'line-color': lineCasingColor, 'line-width': CASING_WIDTH },
       });
       map.addLayer({
@@ -98,7 +107,7 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
         type: 'line',
         source: 'segments',
         filter: ['get', 'eligible'],
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        layout: { 'line-cap': 'round', 'line-join': 'round', 'line-sort-key': SORT_BY_SCORE },
         paint: { 'line-color': SCORE_COLOR, 'line-width': LINE_WIDTH },
       });
 
@@ -123,6 +132,7 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
         id: 'segments-hit',
         type: 'line',
         source: 'segments',
+        layout: { 'line-sort-key': SORT_BY_SCORE },
         paint: { 'line-width': 12, 'line-opacity': 0 },
       });
 
@@ -133,7 +143,7 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
       map.on('mousemove', 'segments-hit', (e) => {
         if (!e.features?.length) return;
         map.getCanvas().style.cursor = 'pointer';
-        const p = e.features[0].properties as SegmentProps;
+        const p = pickTop(e.features);
         const score = p.eligible && p.score != null ? Number(p.score).toFixed(1) : copy.noScore;
         // Build the popup with text nodes: street names come from data, never inject them as HTML.
         const content = document.createElement('div');
@@ -150,7 +160,7 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
 
       map.on('click', 'segments-hit', (e) => {
         if (!e.features?.length) return;
-        setSelectedId((e.features[0].properties as SegmentProps).id);
+        setSelectedId(pickTop(e.features).id);
       });
     });
 

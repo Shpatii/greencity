@@ -78,6 +78,15 @@ export function rankSegments(
   ];
 }
 
+/** Features with score and rank recomputed for weights w (other properties unchanged). */
+export function rescore<F extends { properties: SegmentProps }>(features: F[], w: Weights, meta: ScoreMeta): F[] {
+  const byId = new Map(rankSegments(features, w, meta).map((r) => [r.id, r]));
+  return features.map((f) => {
+    const r = byId.get(f.properties.id)!;
+    return { ...f, properties: { ...f.properties, score: r.score, rank: r.rank } };
+  });
+}
+
 /** Weight x factor per key, for ordering a segment's reasons. */
 export function contributions(p: ScoreInput, w: Weights): Record<FactorKey, number> {
   return Object.fromEntries(FACTORS.map((key) => [key, w[key] * p[`f_${key}`]])) as Record<FactorKey, number>;

@@ -87,3 +87,8 @@ def test_score_cases_fixture(case):
 
 def test_fixture_has_ten_cases():
     assert len(CASES) == 10
+
+
+def test_reason_text_singular_overtake():
+    row = {**segment(0), "share_below_150": 1.0, "n_overtakes": 1, "missing": []}
+    assert reason_texts(row)["safety"] == "100% of 1 overtake was closer than 150 cm"

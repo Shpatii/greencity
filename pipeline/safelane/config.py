@@ -26,3 +26,7 @@ METRIC_CRS = "EPSG:25832"
 MATCH_DISTANCE_M = 20  # point layers -> nearest segment
 LINE_MATCH_DISTANCE_M = 10  # line layer midpoint -> nearest segment
 NAME_FALLBACK_M = 30  # unnamed segment -> "Path along <nearest named street>"
+# Small samples (CONTRACT 3.2, v1.1): f_safety is shrunk toward the city-wide share with
+# the weight of SAFETY_PRIOR_K overtakes; danger points per 100 m use at least this length.
+SAFETY_PRIOR_K = 10
+DANGER_MIN_LENGTH_M = 50

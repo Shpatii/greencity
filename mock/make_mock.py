@@ -14,11 +14,17 @@ from datetime import datetime
 from pathlib import Path
 from random import Random
 
+import pandas as pd
 from jsonschema import Draft202012Validator
 from pyproj import Transformer
 from shapely.geometry import LineString
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "pipeline"))
+
+from safelane import config  # noqa: E402
+from safelane.score import FACTORS, apply_scores, props_records, write_geojson  # noqa: E402
+
 OUT_DIR = ROOT / "web" / "public" / "data"
 SCHEMA_PATH = ROOT / "contract" / "segment.schema.json"
 
@@ -29,13 +35,8 @@ MARGIN_DEG = 0.005  # keep start points away from the bbox edge (> 300 m)
 LENGTH_RANGE_M = (50.0, 300.0)
 MISSING_SHARE = 0.10
 
-# Same defaults as pipeline/safelane/config.py and CONTRACT.md section 3.2.
-DEFAULT_WEIGHTS = {"safety": 0.35, "danger": 0.25, "surface": 0.15, "air": 0.15, "flow": 0.10}
-MIN_POINTS = 5
-CONFIDENCE_N = 30
-METRIC_CRS = "EPSG:25832"
+METRIC_CRS = config.METRIC_CRS
 
-FACTORS = list(DEFAULT_WEIGHTS)
 # Raw metrics that feed each factor; nulled together when the factor is missing.
 FACTOR_METRICS = {
     "safety": ["share_below_150", "avg_overtake_cm"],
@@ -182,48 +183,6 @@ def add_factors(raw, danger_p95):
     raw["missing"] = missing
 
 
-def reason_texts(props):
-    texts = {}
-    if "safety" not in props["missing"]:
-        texts["safety"] = (f"{round(props['share_below_150'] * 100)}% of {props['n_overtakes']} "
-                           f"overtakes were closer than 150 cm")
-    if "danger" not in props["missing"]:
-        texts["danger"] = f"{props['danger_per_100m']:.1f} close-overtake danger points per 100 m"
-    if "surface" not in props["missing"]:
-        texts["surface"] = f"Surface roughness {props['roughness_norm']:.2f} (city scale 0-1)"
-    if "air" not in props["missing"]:
-        texts["air"] = f"PM risk {props['mean_pm_risk']:.2f} (city scale 0-1)"
-    if "flow" not in props["missing"]:
-        texts["flow"] = f"Traffic flows at {round(props['traffic_flow'] * 100)}% of free-flow speed"
-    return texts
-
-
-def add_scores(props):
-    """confidence, eligible, score, reason_texts (rank is set over all segments)."""
-    c = min(1.0, props["n_points"] / CONFIDENCE_N)
-    props["confidence"] = round(c, 3)
-    props["eligible"] = props["n_points"] >= MIN_POINTS
-    weighted = sum(DEFAULT_WEIGHTS[k] * props[f"f_{k}"] for k in FACTORS)
-    props["score"] = round(100 * c * weighted, 1) if props["eligible"] else None
-    props["rank"] = None
-    props["reason_texts"] = reason_texts(props)
-
-
-def add_ranks(all_props):
-    """Eligible by score descending; ties by n_points descending, then id."""
-    eligible = sorted((p for p in all_props if p["eligible"]),
-                      key=lambda p: (-p["score"], -p["n_points"], p["id"]))
-    for rank, props in enumerate(eligible, start=1):
-        props["rank"] = rank
-    return len(eligible)
-
-
-def write_geojson(path, features):
-    # One feature per line keeps git diffs readable.
-    lines = ",\n".join(json.dumps(f, ensure_ascii=False) for f in features)
-    path.write_text('{"type": "FeatureCollection", "features": [\n' + lines + "\n]}\n")
-
-
 def main():
     rng = Random(SEED)
     rows = [make_raw(rng, i) for i in range(1, N_SEGMENTS + 1)] + edge_cases()
@@ -231,12 +190,12 @@ def main():
     danger_p95 = round(p95([r["danger_per_100m"] for _, r in rows if r["danger_per_100m"] is not None]), 2)
     for _, raw in rows:
         add_factors(raw, danger_p95)
-        add_scores(raw)
-    n_eligible = add_ranks([raw for _, raw in rows])
+    scored = apply_scores(pd.DataFrame([raw for _, raw in rows]))
+    n_eligible = int(scored["eligible"].sum())
 
     features = [{"type": "Feature",
                  "geometry": {"type": "LineString", "coordinates": coords},
-                 "properties": raw} for coords, raw in rows]
+                 "properties": props} for (coords, _), props in zip(rows, props_records(scored))]
     meta = {
         "version": "1.0",
         "source": "mock",
@@ -244,10 +203,10 @@ def main():
         "city": "heilbronn",
         "n_segments": len(features),
         "n_eligible": n_eligible,
-        "min_points": MIN_POINTS,
-        "confidence_n": CONFIDENCE_N,
+        "min_points": config.MIN_POINTS,
+        "confidence_n": config.CONFIDENCE_N,
         "danger_p95": danger_p95,
-        "default_weights": DEFAULT_WEIGHTS,
+        "default_weights": config.DEFAULT_WEIGHTS,
         "bbox": BBOX,
     }
 

@@ -22,9 +22,10 @@ def _coords(line):
     return out if len(out) >= 2 else [pts[0], pts[-1]]
 
 
-def _write_json(path, obj):
+def _write_json(path, obj, indent=None):
+    text = json.dumps(obj, ensure_ascii=False, indent=indent, separators=None if indent else (",", ":"))
     tmp = path.with_suffix(path.suffix + ".part")
-    tmp.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")))
+    tmp.write_text(text + "\n")
     tmp.replace(path)
 
 
@@ -51,7 +52,7 @@ def write(geometry, rows, danger_p95):
         "default_weights": config.DEFAULT_WEIGHTS,
         "bbox": [round(float(v), 5) for v in wgs.total_bounds],
     }
-    _write_json(OUT_DIR / "meta.json", meta)
+    _write_json(OUT_DIR / "meta.json", meta, indent=2)
     print(f"Wrote {OUT_DIR / 'segments.geojson'} ({len(rows)} segments) and meta.json")
 
 

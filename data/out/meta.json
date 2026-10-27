@@ -1,1 +1,24 @@
-{"version":"1.0","source":"atrai","generated_at":"2026-10-27T14:30:01+01:00","city":"heilbronn","n_segments":7850,"n_eligible":0,"min_points":5,"confidence_n":30,"danger_p95":22.469,"default_weights":{"safety":0.35,"danger":0.25,"surface":0.15,"air":0.15,"flow":0.1},"bbox":[9.04796,49.09375,9.30149,49.20964]}
+{
+  "version": "1.0",
+  "source": "atrai",
+  "generated_at": "2026-10-27T15:16:03+01:00",
+  "city": "heilbronn",
+  "n_segments": 7850,
+  "n_eligible": 0,
+  "min_points": 5,
+  "confidence_n": 30,
+  "danger_p95": 22.469,
+  "default_weights": {
+    "safety": 0.35,
+    "danger": 0.25,
+    "surface": 0.15,
+    "air": 0.15,
+    "flow": 0.1
+  },
+  "bbox": [
+    9.04796,
+    49.09375,
+    9.30149,
+    49.20964
+  ]
+}

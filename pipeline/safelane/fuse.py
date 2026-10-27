@@ -111,6 +111,20 @@ def _match_lines(layer, base, key):
     return seg
 
 
+def path_name(street):
+    return f"Path along {street}"
+
+
+def _fill_names(names, base):
+    """Unnamed segments (OSM footways, cycleways) take the nearest named street within NAME_FALLBACK_M."""
+    named = names.notna()
+    todo = ~named
+    if not todo.any() or not named.any():
+        return names
+    hit = _nearest(base.geometry[todo], base[named], config.NAME_FALLBACK_M)
+    return names.where(named, hit.map(names).map(path_name))
+
+
 def _wavg(df, col, weight):
     d = df.dropna(subset=[col])
     w = d[weight].clip(lower=1)
@@ -135,7 +149,8 @@ def build(base_name="road_network"):
     m = pd.DataFrame(index=base.index)
     m["id"] = [f"seg_{i:06d}" for i in base.index]
     m["osm_id"] = base["osmid"].map(lambda v: ",".join(str(x) for x in parse_list(v)) or None)
-    m["name"] = base["name"].map(lambda v: next((str(x) for x in parse_list(v)), None))
+    names = base["name"].map(lambda v: next((str(x) for x in parse_list(v)), None)).astype(object)
+    m["name"] = _fill_names(names, base)
     m["length_m"] = base.length
 
     report, lines = [], {}

@@ -152,3 +152,58 @@ def test_query_excludes_highways_and_uses_bbox():
     q = osm.query(49.1, 9.1, 49.2, 9.3)
     assert "motorway_link" in q and "steps" in q and "(49.10000,9.10000,49.20000,9.30000)" in q
     assert q.endswith("out tags geom;")
+
+
+# --- Failure handling: never publish null OSM fields by accident ---------------------------------
+
+@pytest.fixture
+def raw_dir(tmp_path, monkeypatch):
+    """Point osm at a temp data/raw/ holding a one-street road network."""
+    monkeypatch.setattr(osm, "RAW_DIR", tmp_path)
+    monkeypatch.setattr(osm, "CACHE", tmp_path / "osm_overpass.json")
+    gpd.GeoDataFrame(geometry=[LineString(STREET)], crs="EPSG:4326").to_file(
+        tmp_path / f"{config.COLLECTIONS['road_network']}.geojson", driver="GeoJSON")
+    return tmp_path
+
+
+def failing_post(*args, **kwargs):
+    raise osm.requests.ConnectionError("overpass down")
+
+
+def test_run_raises_without_cache_when_overpass_fails(raw_dir, monkeypatch):
+    monkeypatch.setattr(osm.requests.Session, "post", failing_post)
+    with pytest.raises(osm.OverpassError):
+        osm.run(refresh=True)
+
+
+def test_run_reuses_cache_when_overpass_fails(raw_dir, monkeypatch):
+    osm.CACHE.write_text('{"elements": [{"type": "way", "id": 1}]}', encoding="utf-8")
+    monkeypatch.setattr(osm.requests.Session, "post", failing_post)
+    osm.run(refresh=True)
+    assert osm.load_cached() == {"elements": [{"type": "way", "id": 1}]}
+
+
+def test_run_allow_missing_does_not_raise(raw_dir, monkeypatch):
+    monkeypatch.setattr(osm.requests.Session, "post", failing_post)
+    osm.run(refresh=True, allow_missing=True)
+    assert osm.load_cached() is None
+
+
+class _Response:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self.payload
+
+
+def test_fetch_rejects_overpass_timeout_remark_without_caching(raw_dir, monkeypatch):
+    # Overpass answers a timed-out query with HTTP 200, a remark and no elements.
+    remark = "runtime error: Query timed out in \"query\" at line 2 after 181 seconds."
+    monkeypatch.setattr(osm.requests.Session, "post", lambda *a, **k: _Response({"elements": [], "remark": remark}))
+    with pytest.raises(osm.OverpassError, match="timed out"):
+        osm.fetch((9.21, 49.142, 9.212, 49.142), refresh=True)
+    assert not osm.CACHE.exists()

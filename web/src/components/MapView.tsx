@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
+import { PMTiles, Protocol } from 'pmtiles';
+import { layers, namedFlavor } from '@protomaps/basemaps';
 import type { CounterCollection, CounterProps, SegmentCollection, SegmentFeature } from '@/lib/loadData';
 import type { RankedSegment } from '@/lib/score';
 import type { Meta, SegmentProps } from '@/lib/types';
@@ -16,13 +18,35 @@ import {
 } from '@/content/theme';
 import { copy } from '@/content/copy';
 
-const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 const CENTER: [number, number] = [9.2109, 49.1427];
 const ZOOM = 13;
+const MIN_ZOOM = 9;
 
 // maplibre v6 resolves its worker relative to its own module URL, which webpack breaks.
 // `npm run copy-worker` (runs before dev/build) puts it in public/.
 maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs');
+
+// Self-hosted base map (pipeline: python run.py --basemap -> public/basemap/): tiles, fonts and
+// sprites come from this site, so no map request goes to a third party.
+const BASEMAP = '/basemap';
+const protocol = new Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
+
+function basemapStyle(origin: string): maplibregl.StyleSpecification {
+  return {
+    version: 8,
+    glyphs: `${origin}${BASEMAP}/fonts/{fontstack}/{range}.pbf`,
+    sprite: `${origin}${BASEMAP}/sprites/v4/light`,
+    sources: {
+      protomaps: {
+        type: 'vector',
+        url: `pmtiles://${origin}${BASEMAP}/heilbronn.pmtiles`,
+        attribution: copy.basemapAttribution,
+      },
+    },
+    layers: layers('protomaps', namedFlavor('light'), { lang: 'en' }),
+  };
+}
 
 const LINE_WIDTH: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 12, 2, 14, 3, 16, 5];
 const CASING_WIDTH: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 12, 3.5, 14, 4.5, 16, 7];
@@ -102,12 +126,22 @@ export default function MapView({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    const origin = window.location.origin;
+    const archive = new PMTiles(`${origin}${BASEMAP}/heilbronn.pmtiles`);
+    protocol.add(archive);
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: STYLE_URL,
+      style: basemapStyle(origin),
       center: CENTER,
       zoom: ZOOM,
+      minZoom: MIN_ZOOM,
     });
+    // Keep the view inside the extract, so the map never shows empty base map. A failed read here
+    // also fails the tile requests, which MapLibre reports; the bounds themselves are optional.
+    archive
+      .getHeader()
+      .then((h) => map.setMaxBounds([[h.minLon, h.minLat], [h.maxLon, h.maxLat]]))
+      .catch(() => {});
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     mapRef.current = map;
 

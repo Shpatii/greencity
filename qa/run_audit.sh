@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Re-run the whole G2 audit from the repo root:  bash qa/run_audit.sh
-# Logs go to qa/logs/, screenshots to qa/screens/. Needs python3.11, node >= 18, network
+# Re-run the whole QA audit from the repo root:  bash qa/run_audit.sh   (CI runs the same checks)
+# Logs go to qa/logs/, screenshots to qa/screens/. Needs python3.11, node >= 20.9, network
 # (pip, npm, Playwright browser, map tiles). Port 4173 must be free.
 # SKIP_NPM_CI=1 keeps web/node_modules (e.g. while a `next dev` server is running).
 set -u
@@ -46,7 +46,7 @@ node qa/contract_drift.mjs | tee $L/b13_contract_drift.log
 
 # B12 browser checks against the static export
 ( cd qa && npm install --silent && npx playwright install chromium > /dev/null )
-python3 -m http.server "$PORT" -d web/out > $L/b12_server.log 2>&1 &
+node web/scripts/serve.mjs web/out "$PORT" > $L/b12_server.log 2>&1 &
 SERVER=$!; sleep 2
 node qa/e2e.mjs --url "http://localhost:$PORT" | tee $L/b12_e2e.log
 kill $SERVER

@@ -10,7 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-feats = json.loads((ROOT / "data/out/segments.geojson").read_text())["features"]
+feats = json.loads((ROOT / "data/out/segments.geojson").read_text(encoding="utf-8"))["features"]
 groups = defaultdict(list)
 for i, f in enumerate(feats):
     c = [tuple(p) for p in f["geometry"]["coordinates"]]

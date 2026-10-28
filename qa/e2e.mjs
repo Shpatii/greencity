@@ -1,16 +1,18 @@
 // QA B12: browser checks against the production build (static export in web/out/).
 //
 //   (cd web && npm run build && npm start)   # serves web/out on :3000
-//   node qa/e2e.mjs [--url http://localhost:3000]
+//   node qa/e2e.mjs [--url http://localhost:3000]   # base URL; the checks run on its /map/ page
 //
-// Prints one RESULT line per sub-check (12a..12g) and saves screenshots to qa/screens/.
+// Prints one RESULT line per sub-check (12a..12i) and saves screenshots to qa/screens/.
 import { chromium } from 'playwright';
+import AxeBuilder from '@axe-core/playwright';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const URL = process.argv.includes('--url') ? process.argv[process.argv.indexOf('--url') + 1] : 'http://localhost:3000';
+const BASE = process.argv.includes('--url') ? process.argv[process.argv.indexOf('--url') + 1] : 'http://localhost:3000';
+const MAP_URL = new URL('/map/', BASE).href;
 const SHOTS = join(ROOT, 'qa', 'screens');
 mkdirSync(SHOTS, { recursive: true });
 
@@ -51,7 +53,7 @@ try {
 
   // a) load + canvas within 5 s + no console errors
   const t0 = Date.now();
-  await page.goto(URL, { waitUntil: 'domcontentloaded' });
+  await page.goto(MAP_URL, { waitUntil: 'domcontentloaded' });
   let canvasMs = null;
   try {
     await page.locator('canvas.maplibregl-canvas').waitFor({ state: 'visible', timeout: 5000 });
@@ -125,7 +127,8 @@ try {
     + `any point opens rank-1: ${anyHit}; any card opened: ${anyOpen}`);
 
   // f) legend + "How we score"
-  const legend = await page.getByRole('heading', { name: 'Safety priority' }).isVisible();
+  // level 2: the sidebar title (h1) has the same text as the legend heading (h2).
+  const legend = await page.getByRole('heading', { name: 'Safety priority', level: 2 }).isVisible();
   const method = page.getByRole('button', { name: 'How we score' });
   const methodVisible = await method.isVisible();
   await method.click();
@@ -166,7 +169,8 @@ try {
     };
   });
   await page.screenshot({ path: join(SHOTS, '12g_desktop_1920x1080.png') });
-  const allIn = [dims.map, dims.list, dims.method].every((b) => b && b[1] <= dims.innerH);
+  // The method toggle sits below the sliders in the sidebar's own scroll area; 12f checks it works.
+  const allIn = [dims.map, dims.list].every((b) => b && b[1] <= dims.innerH);
   const gDesk = dims.scrollH <= dims.innerH && dims.scrollW <= dims.innerW && allIn;
   console.log(`  desktop dims ${JSON.stringify(dims)}`);
 
@@ -175,7 +179,7 @@ try {
   const mp = await m.newPage();
   const mErrors = [];
   mp.on('console', (msg) => { if (msg.type() === 'error') mErrors.push(msg.text()); });
-  await mp.goto(URL, { waitUntil: 'load' });
+  await mp.goto(MAP_URL, { waitUntil: 'load' });
   await mp.locator('section', { hasText: 'Top 10 priority streets' }).locator('tbody tr').first().waitFor({ timeout: 15000 });
   await mp.waitForTimeout(4000); // map tiles + 6 MB GeoJSON take ~1-4 s to paint
   const mDims = await mp.evaluate(() => {
@@ -189,13 +193,27 @@ try {
   const gMob = mDims.listTop >= mDims.mapBottom && mDims.scrollW <= mDims.innerW;
   console.log(`  mobile dims ${JSON.stringify(mDims)}; mobile console errors ${mErrors.length}`);
   result('12g', gDesk && gMob ? 'PASS' : 'FAIL',
-    `desktop: page scroll ${dims.scrollH}/${dims.innerH}, map/list/method inside viewport ${allIn}; `
+    `desktop: page scroll ${dims.scrollH}/${dims.innerH}, map/list inside viewport ${allIn}; `
     + `mobile: list top ${mDims.listTop} >= map bottom ${mDims.mapBottom}: ${gMob}, horizontal overflow ${mDims.scrollW > mDims.innerW}`);
 
   // Extra evidence: placeholder WeightSliders visible?
   const placeholder = await page.getByText('WeightSliders', { exact: true }).isVisible().catch(() => false);
   console.log(`  note: literal "WeightSliders" placeholder box visible on desktop: ${placeholder}`);
   console.log(`  total console errors during desktop run: ${errors.length} ${JSON.stringify(errors.slice(0, 5))}`);
+
+  // i) accessibility: no serious or critical WCAG 2.1 A/AA violations (axe) on the public pages
+  const axeFindings = [];
+  for (const path of ['/', '/map/', '/imprint/', '/privacy/']) {
+    await page.goto(new URL(path, BASE).href, { waitUntil: 'load' });
+    await page.waitForTimeout(1500);
+    const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+    for (const v of violations.filter((x) => x.impact === 'serious' || x.impact === 'critical')) {
+      axeFindings.push(`${path} ${v.id} (${v.impact}, ${v.nodes.length}x: ${v.nodes[0].target.join(' ')})`);
+    }
+  }
+  result('12i', axeFindings.length ? 'FAIL' : 'PASS',
+    `serious/critical axe violations: ${axeFindings.length} ${JSON.stringify(axeFindings)}`);
+
   await m.close();
   await ctx.close();
 } finally {

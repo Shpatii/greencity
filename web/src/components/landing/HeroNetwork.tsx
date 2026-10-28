@@ -3,13 +3,15 @@
 import { useEffect, useRef } from 'react';
 import type { SegmentFeature } from '@/lib/loadData';
 import type { Meta } from '@/lib/types';
-import { scoreBreaks } from '@/content/theme';
 
 // The map's ramp ends in dark purple, which vanishes on black. The hero uses its own
 // ramp instead: quiet grey for low priority, warm and bright for high.
 const HERO_COLORS = ['rgba(255,255,255,0.22)', '#ffd60a', '#ff9f0a', '#ff453a', '#ff2d55'];
 const NO_DATA = 'rgba(255,255,255,0.08)';
 const DRAW_MS = 2200;
+// Brightness by rank, not by absolute score: the top 15% of ranked sections glow, the top 1%
+// brightest. The picture stays the same whatever score range the method produces.
+const RANK_TIERS = [0.01, 0.03, 0.08, 0.15];
 
 interface Line {
   coords: number[][];
@@ -19,9 +21,11 @@ interface Line {
   d: number;
 }
 
-function heroColor(score: number | null): string {
-  if (score === null) return NO_DATA;
-  return HERO_COLORS[scoreBreaks.filter((b) => score >= b).length];
+/** HERO_COLORS index: 0 = quiet grey, 4 = top tier; null = not ranked. */
+function heroTier(rank: number | null, nRanked: number): number | null {
+  if (rank === null) return null;
+  const tier = RANK_TIERS.findIndex((share) => rank <= share * nRanked);
+  return tier === -1 ? 0 : RANK_TIERS.length - tier;
 }
 
 // The real street network, drawn outward from the city centre on a canvas.
@@ -40,10 +44,11 @@ export default function HeroNetwork({ segments, meta }: { segments: SegmentFeatu
     const lines: Line[] = segments
       .map(({ geometry, properties: p }) => {
         const [x, y] = geometry.coordinates[0];
+        const tier = heroTier(p.rank, meta.n_eligible);
         return {
           coords: geometry.coordinates,
-          color: heroColor(p.score),
-          glow: p.score !== null && p.score >= scoreBreaks[0],
+          color: tier === null ? NO_DATA : HERO_COLORS[tier],
+          glow: tier !== null && tier > 0,
           d: Math.hypot((x - cx) * kx, y - cy),
         };
       })

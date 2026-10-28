@@ -1,4 +1,4 @@
-"""P1: download + cache to data/raw/."""
+"""Download + cache to data/raw/."""
 
 import ast
 import json
@@ -14,7 +14,6 @@ from safelane import config
 from safelane.json_io import decode_source, read_source_json
 
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
-USER_AGENT = "safelane-hn-hackathon"
 TIMEOUT = (10, 60)  # connect, read (seconds)
 FULL_LOAD_MAX_S = 60  # limit=0 slower than this -> fall back to paging
 PAGE_SIZE = 1000
@@ -23,7 +22,7 @@ CAMPAIGN = "heilbronn"
 
 def _session(retries):
     s = requests.Session()
-    s.headers["User-Agent"] = USER_AGENT
+    s.headers["User-Agent"] = config.USER_AGENT
     retry = Retry(
         total=retries,
         backoff_factor=1,

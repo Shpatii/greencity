@@ -32,7 +32,7 @@ endobj
 endobj
 6 0 obj
 <<
-/Author (SafeLane HN) /CreationDate (D:20261028161151+01'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20261028161151+01'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+/Author (SafeLane HN) /CreationDate (D:20261028185803+01'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20261028185803+01'00') /Producer (ReportLab PDF Library - \(opensource\)) 
   /Subject (\(unspecified\)) /Title (SafeLane HN - Cycling safety priority list Heilbronn) /Trapped /False
 >>
 endobj
@@ -43,7 +43,7 @@ endobj
 endobj
 8 0 obj
 <<
-/Length 12050
+/Length 11967
 >>
 stream
 1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
@@ -65,7 +65,7 @@ q
 1 0 0 1 57.02362 713.8661 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 16.5 Tm /F1 9.5 Tf 13 TL (Data: ATRAI senseBox:bike, Heilbronn. Data generated 2026-10-28. 6,642 street segments with measurements,) Tj T* (5,106 with enough data to rank, 863 with recorded overtakes.) Tj T* ET
+BT 1 0 0 1 0 16.5 Tm /F1 9.5 Tf 13 TL (Data: ATRAI senseBox:bike, Heilbronn. Data generated 2026-10-28. 6,638 street segments with measurements,) Tj T* (5,109 with enough data to rank, 602 with recorded overtakes.) Tj T* ET
 Q
 Q
 q
@@ -97,17 +97,17 @@ q
 1 0 0 1 40.01575 317 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Path along Pfaffenstra\337e) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Austra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 182.5265 319 Tm (76.1) Tj T* ET
-BT 1 0 0 1 226.2675 319 Tm (1,273) Tj T* ET
-BT 1 0 0 1 262.5044 319 Tm (100% of 35) Tj T* ET
+BT 1 0 0 1 182.5265 319 Tm (68.0) Tj T* ET
+BT 1 0 0 1 232.9395 319 Tm (234) Tj T* ET
+BT 1 0 0 1 262.5044 319 Tm (100% of 65) Tj T* ET
 q
 1 0 0 1 314.9764 317 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 35 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 65 overtakes were closer than 150 cm) Tj T* ET
 Q
 Q
 BT 1 0 0 1 6 303 Tm (2) Tj T* ET
@@ -115,17 +115,17 @@ q
 1 0 0 1 40.01575 301 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Theodor-Fischer-Stra\337e) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Service road off Weipertstra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 182.5265 303 Tm (75.5) Tj T* ET
-BT 1 0 0 1 237.3875 303 Tm (79) Tj T* ET
-BT 1 0 0 1 262.5044 303 Tm (100% of 46) Tj T* ET
+BT 1 0 0 1 182.5265 303 Tm (62.9) Tj T* ET
+BT 1 0 0 1 232.9395 303 Tm (503) Tj T* ET
+BT 1 0 0 1 266.9524 303 Tm (97% of 62) Tj T* ET
 q
 1 0 0 1 314.9764 301 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 46 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (40.0 close-overtake danger points per 100 m) Tj T* ET
 Q
 Q
 BT 1 0 0 1 6 287 Tm (3) Tj T* ET
@@ -133,17 +133,17 @@ q
 1 0 0 1 40.01575 285 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Path along Wilhelmstra\337e) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Br\374ckenstra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 182.5265 287 Tm (75.3) Tj T* ET
-BT 1 0 0 1 232.9395 287 Tm (221) Tj T* ET
-BT 1 0 0 1 262.5044 287 Tm (100% of 20) Tj T* ET
+BT 1 0 0 1 182.5265 287 Tm (55.5) Tj T* ET
+BT 1 0 0 1 232.9395 287 Tm (576) Tj T* ET
+BT 1 0 0 1 266.9524 287 Tm (92% of 26) Tj T* ET
 q
 1 0 0 1 314.9764 285 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 20 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (35.6 close-overtake danger points per 100 m) Tj T* ET
 Q
 Q
 BT 1 0 0 1 6 271 Tm (4) Tj T* ET
@@ -151,17 +151,17 @@ q
 1 0 0 1 40.01575 269 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Unnamed street) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Weipertstra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 182.5265 271 Tm (75.2) Tj T* ET
-BT 1 0 0 1 232.9395 271 Tm (172) Tj T* ET
-BT 1 0 0 1 262.5044 271 Tm (100% of 30) Tj T* ET
+BT 1 0 0 1 182.5265 271 Tm (50.9) Tj T* ET
+BT 1 0 0 1 232.9395 271 Tm (378) Tj T* ET
+BT 1 0 0 1 262.5044 271 Tm (100% of 21) Tj T* ET
 q
 1 0 0 1 314.9764 269 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 30 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 21 overtakes were closer than 150 cm) Tj T* ET
 Q
 Q
 BT 1 0 0 1 6 255 Tm (5) Tj T* ET
@@ -169,17 +169,17 @@ q
 1 0 0 1 40.01575 253 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Path along Gartenstra\337e) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Haller Stra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 182.5265 255 Tm (75.2) Tj T* ET
-BT 1 0 0 1 237.3875 255 Tm (60) Tj T* ET
-BT 1 0 0 1 262.5044 255 Tm (100% of 53) Tj T* ET
+BT 1 0 0 1 182.5265 255 Tm (45.6) Tj T* ET
+BT 1 0 0 1 237.3875 255 Tm (57) Tj T* ET
+BT 1 0 0 1 262.5044 255 Tm (100% of 23) Tj T* ET
 q
 1 0 0 1 314.9764 253 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 53 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 23 overtakes were closer than 150 cm) Tj T* ET
 Q
 Q
 BT 1 0 0 1 6 239 Tm (6) Tj T* ET
@@ -187,17 +187,17 @@ q
 1 0 0 1 40.01575 237 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Kaiserstra\337e) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Salzstra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 182.5265 239 Tm (74.6) Tj T* ET
-BT 1 0 0 1 232.9395 239 Tm (549) Tj T* ET
-BT 1 0 0 1 262.5044 239 Tm (100% of 46) Tj T* ET
+BT 1 0 0 1 182.5265 239 Tm (44.8) Tj T* ET
+BT 1 0 0 1 226.2675 239 Tm (1,467) Tj T* ET
+BT 1 0 0 1 266.9524 239 Tm (91% of 35) Tj T* ET
 q
 1 0 0 1 314.9764 237 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 46 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (91% of 35 overtakes were closer than 150 cm) Tj T* ET
 Q
 Q
 BT 1 0 0 1 6 223 Tm (7) Tj T* ET
@@ -205,251 +205,251 @@ q
 1 0 0 1 40.01575 221 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Theodor-Fischer-Stra\337e) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Service road off Wilhelmstra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 182.5265 223 Tm (74.6) Tj T* ET
-BT 1 0 0 1 232.9395 223 Tm (202) Tj T* ET
-BT 1 0 0 1 258.0564 223 Tm (100% of 202) Tj T* ET
+BT 1 0 0 1 182.5265 223 Tm (44.7) Tj T* ET
+BT 1 0 0 1 237.3875 223 Tm (59) Tj T* ET
+BT 1 0 0 1 266.9524 223 Tm (45% of 22) Tj T* ET
 q
 1 0 0 1 314.9764 221 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 202 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (30.0 close-overtake danger points per 100 m) Tj T* ET
 Q
 Q
 BT 1 0 0 1 6 207 Tm (8) Tj T* ET
 q
-1 0 0 1 40.01575 205 cm
+1 0 0 1 40.01575 195 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Haigernstra\337e) Tj T* ET
+BT 1 0 0 1 0 12 Tm /F1 8 Tf 10 TL (Service road off) Tj T* (Max-Planck-Stra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 182.5265 207 Tm (74.5) Tj T* ET
-BT 1 0 0 1 232.9395 207 Tm (902) Tj T* ET
-BT 1 0 0 1 262.5044 207 Tm (100% of 89) Tj T* ET
+BT 1 0 0 1 182.5265 207 Tm (44.4) Tj T* ET
+BT 1 0 0 1 232.9395 207 Tm (179) Tj T* ET
+BT 1 0 0 1 266.9524 207 Tm (86% of 22) Tj T* ET
 q
 1 0 0 1 314.9764 205 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 89 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (86% of 22 overtakes were closer than 150 cm) Tj T* ET
 Q
 Q
-BT 1 0 0 1 6 191 Tm (9) Tj T* ET
+BT 1 0 0 1 6 181 Tm (9) Tj T* ET
 q
-1 0 0 1 40.01575 189 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Path along Kirchbrunnenstra\337e) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 191 Tm (74.2) Tj T* ET
-BT 1 0 0 1 232.9395 191 Tm (285) Tj T* ET
-BT 1 0 0 1 262.5044 191 Tm (100% of 25) Tj T* ET
-q
-1 0 0 1 314.9764 189 cm
+1 0 0 1 40.01575 179 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 25 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Rampachertal) Tj T* ET
 Q
 Q
-BT 1 0 0 1 6 175 Tm (10) Tj T* ET
+BT 1 0 0 1 182.5265 181 Tm (43.0) Tj T* ET
+BT 1 0 0 1 237.3875 181 Tm (26) Tj T* ET
+BT 1 0 0 1 262.5044 181 Tm (100% of 26) Tj T* ET
 q
-1 0 0 1 40.01575 173 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Unnamed street) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 175 Tm (73.9) Tj T* ET
-BT 1 0 0 1 226.2675 175 Tm (1,291) Tj T* ET
-BT 1 0 0 1 262.5044 175 Tm (100% of 15) Tj T* ET
-q
-1 0 0 1 314.9764 173 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 15 overtakes were closer than 150 cm) Tj T* ET
-Q
-Q
-BT 1 0 0 1 6 159 Tm (11) Tj T* ET
-q
-1 0 0 1 40.01575 157 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Austra\337e) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 159 Tm (73.4) Tj T* ET
-BT 1 0 0 1 232.9395 159 Tm (234) Tj T* ET
-BT 1 0 0 1 262.5044 159 Tm (100% of 65) Tj T* ET
-q
-1 0 0 1 314.9764 157 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 65 overtakes were closer than 150 cm) Tj T* ET
-Q
-Q
-BT 1 0 0 1 6 143 Tm (12) Tj T* ET
-q
-1 0 0 1 40.01575 141 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Path along Bismarckstra\337e) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 143 Tm (73.3) Tj T* ET
-BT 1 0 0 1 232.9395 143 Tm (433) Tj T* ET
-BT 1 0 0 1 266.9524 143 Tm (100% of 4) Tj T* ET
-q
-1 0 0 1 314.9764 141 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 4 overtakes were closer than 150 cm) Tj T* ET
-Q
-Q
-BT 1 0 0 1 6 127 Tm (13) Tj T* ET
-q
-1 0 0 1 40.01575 125 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Unnamed street) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 127 Tm (73.2) Tj T* ET
-BT 1 0 0 1 232.9395 127 Tm (399) Tj T* ET
-BT 1 0 0 1 262.5044 127 Tm (92% of 131) Tj T* ET
-q
-1 0 0 1 314.9764 125 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (92% of 131 overtakes were closer than 150 cm) Tj T* ET
-Q
-Q
-BT 1 0 0 1 6 111 Tm (14) Tj T* ET
-q
-1 0 0 1 40.01575 109 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Path along Kreuz\344ckerstra\337e) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 111 Tm (73.1) Tj T* ET
-BT 1 0 0 1 232.9395 111 Tm (239) Tj T* ET
-BT 1 0 0 1 262.5044 111 Tm (100% of 26) Tj T* ET
-q
-1 0 0 1 314.9764 109 cm
+1 0 0 1 314.9764 179 cm
 q
 0 0 0 rg
 BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 26 overtakes were closer than 150 cm) Tj T* ET
 Q
 Q
-BT 1 0 0 1 6 95 Tm (15) Tj T* ET
+BT 1 0 0 1 6 165 Tm (10) Tj T* ET
 q
-1 0 0 1 40.01575 93 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Max-Planck-Stra\337e) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 95 Tm (72.8) Tj T* ET
-BT 1 0 0 1 232.9395 95 Tm (135) Tj T* ET
-BT 1 0 0 1 266.9524 95 Tm (92% of 24) Tj T* ET
-q
-1 0 0 1 314.9764 93 cm
+1 0 0 1 40.01575 163 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (92% of 24 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Horkheimer Stra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 6 79 Tm (16) Tj T* ET
+BT 1 0 0 1 182.5265 165 Tm (41.0) Tj T* ET
+BT 1 0 0 1 237.3875 165 Tm (70) Tj T* ET
+BT 1 0 0 1 266.9524 165 Tm (70% of 23) Tj T* ET
 q
-1 0 0 1 40.01575 77 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Path along Weipertstra\337e) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 79 Tm (72.7) Tj T* ET
-BT 1 0 0 1 232.9395 79 Tm (500) Tj T* ET
-BT 1 0 0 1 266.9524 79 Tm (97% of 62) Tj T* ET
-q
-1 0 0 1 314.9764 77 cm
+1 0 0 1 314.9764 163 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (97% of 62 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (25.3 close-overtake danger points per 100 m) Tj T* ET
 Q
 Q
-BT 1 0 0 1 6 63 Tm (17) Tj T* ET
+BT 1 0 0 1 6 149 Tm (11) Tj T* ET
 q
-1 0 0 1 40.01575 61 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Path along Spitzwegstra\337e) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 63 Tm (72.7) Tj T* ET
-BT 1 0 0 1 237.3875 63 Tm (46) Tj T* ET
-BT 1 0 0 1 262.5044 63 Tm (100% of 13) Tj T* ET
-q
-1 0 0 1 314.9764 61 cm
+1 0 0 1 40.01575 147 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 13 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Biberacher Stra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 6 47 Tm (18) Tj T* ET
+BT 1 0 0 1 182.5265 149 Tm (38.4) Tj T* ET
+BT 1 0 0 1 232.9395 149 Tm (617) Tj T* ET
+BT 1 0 0 1 266.9524 149 Tm (76% of 21) Tj T* ET
 q
-1 0 0 1 40.01575 45 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Unnamed street) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 47 Tm (72.5) Tj T* ET
-BT 1 0 0 1 232.9395 47 Tm (483) Tj T* ET
-BT 1 0 0 1 262.5044 47 Tm (100% of 28) Tj T* ET
-q
-1 0 0 1 314.9764 45 cm
+1 0 0 1 314.9764 147 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 28 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (76% of 21 overtakes were closer than 150 cm) Tj T* ET
 Q
 Q
-BT 1 0 0 1 6 31 Tm (19) Tj T* ET
+BT 1 0 0 1 6 133 Tm (12) Tj T* ET
 q
-1 0 0 1 40.01575 29 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Turmstra\337e) Tj T* ET
-Q
-Q
-BT 1 0 0 1 182.5265 31 Tm (72.2) Tj T* ET
-BT 1 0 0 1 232.9395 31 Tm (270) Tj T* ET
-BT 1 0 0 1 266.9524 31 Tm (92% of 24) Tj T* ET
-q
-1 0 0 1 314.9764 29 cm
+1 0 0 1 40.01575 131 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (92% of 24 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Path along Weidenb\344umle) Tj T* ET
 Q
 Q
-BT 1 0 0 1 6 15 Tm (20) Tj T* ET
+BT 1 0 0 1 182.5265 133 Tm (38.4) Tj T* ET
+BT 1 0 0 1 232.9395 133 Tm (144) Tj T* ET
+BT 1 0 0 1 262.5044 133 Tm (100% of 20) Tj T* ET
+q
+1 0 0 1 314.9764 131 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 20 overtakes were closer than 150 cm) Tj T* ET
+Q
+Q
+BT 1 0 0 1 6 117 Tm (13) Tj T* ET
+q
+1 0 0 1 40.01575 115 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Sch\344fergasse) Tj T* ET
+Q
+Q
+BT 1 0 0 1 182.5265 117 Tm (36.4) Tj T* ET
+BT 1 0 0 1 237.3875 117 Tm (23) Tj T* ET
+BT 1 0 0 1 262.5044 117 Tm (100% of 22) Tj T* ET
+q
+1 0 0 1 314.9764 115 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 22 overtakes were closer than 150 cm) Tj T* ET
+Q
+Q
+BT 1 0 0 1 6 101 Tm (14) Tj T* ET
+q
+1 0 0 1 40.01575 99 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Schmollerstra\337e) Tj T* ET
+Q
+Q
+BT 1 0 0 1 182.5265 101 Tm (35.7) Tj T* ET
+BT 1 0 0 1 237.3875 101 Tm (24) Tj T* ET
+BT 1 0 0 1 266.9524 101 Tm (88% of 24) Tj T* ET
+q
+1 0 0 1 314.9764 99 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (28.0 close-overtake danger points per 100 m) Tj T* ET
+Q
+Q
+BT 1 0 0 1 6 85 Tm (15) Tj T* ET
+q
+1 0 0 1 40.01575 83 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Max-von-Laue-Stra\337e) Tj T* ET
+Q
+Q
+BT 1 0 0 1 182.5265 85 Tm (34.5) Tj T* ET
+BT 1 0 0 1 232.9395 85 Tm (586) Tj T* ET
+BT 1 0 0 1 262.5044 85 Tm (100% of 20) Tj T* ET
+q
+1 0 0 1 314.9764 83 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 20 overtakes were closer than 150 cm) Tj T* ET
+Q
+Q
+BT 1 0 0 1 6 69 Tm (16) Tj T* ET
+q
+1 0 0 1 40.01575 67 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Spemannstra\337e) Tj T* ET
+Q
+Q
+BT 1 0 0 1 182.5265 69 Tm (33.2) Tj T* ET
+BT 1 0 0 1 226.2675 69 Tm (1,679) Tj T* ET
+BT 1 0 0 1 266.9524 69 Tm (38% of 26) Tj T* ET
+q
+1 0 0 1 314.9764 67 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (38% of 26 overtakes were closer than 150 cm) Tj T* ET
+Q
+Q
+BT 1 0 0 1 6 53 Tm (17) Tj T* ET
+q
+1 0 0 1 40.01575 51 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Charlottenstra\337e) Tj T* ET
+Q
+Q
+BT 1 0 0 1 182.5265 53 Tm (32.6) Tj T* ET
+BT 1 0 0 1 232.9395 53 Tm (297) Tj T* ET
+BT 1 0 0 1 266.9524 53 Tm (61% of 31) Tj T* ET
+q
+1 0 0 1 314.9764 51 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (61% of 31 overtakes were closer than 150 cm) Tj T* ET
+Q
+Q
+BT 1 0 0 1 6 37 Tm (18) Tj T* ET
+q
+1 0 0 1 40.01575 35 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Spemannstra\337e) Tj T* ET
+Q
+Q
+BT 1 0 0 1 182.5265 37 Tm (32.4) Tj T* ET
+BT 1 0 0 1 232.9395 37 Tm (240) Tj T* ET
+BT 1 0 0 1 266.9524 37 Tm (45% of 42) Tj T* ET
+q
+1 0 0 1 314.9764 35 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (15.7 close-overtake danger points per 100 m) Tj T* ET
+Q
+Q
+BT 1 0 0 1 6 21 Tm (19) Tj T* ET
+q
+1 0 0 1 40.01575 19 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Saarlandstra\337e) Tj T* ET
+Q
+Q
+BT 1 0 0 1 182.5265 21 Tm (32.3) Tj T* ET
+BT 1 0 0 1 232.9395 21 Tm (248) Tj T* ET
+BT 1 0 0 1 266.9524 21 Tm (95% of 22) Tj T* ET
+q
+1 0 0 1 314.9764 19 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (95% of 22 overtakes were closer than 150 cm) Tj T* ET
+Q
+Q
+BT 1 0 0 1 6 5 Tm (20) Tj T* ET
 q
 1 0 0 1 40.01575 3 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 12 Tm /F1 8 Tf 10 TL (Path along Obereisesheimer) Tj T* (Stra\337e) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (Feurerstra\337e) Tj T* ET
 Q
 Q
-BT 1 0 0 1 182.5265 15 Tm (72.1) Tj T* ET
-BT 1 0 0 1 232.9395 15 Tm (416) Tj T* ET
-BT 1 0 0 1 262.5044 15 Tm (100% of 13) Tj T* ET
+BT 1 0 0 1 182.5265 5 Tm (32.3) Tj T* ET
+BT 1 0 0 1 232.9395 5 Tm (189) Tj T* ET
+BT 1 0 0 1 266.9524 5 Tm (38% of 24) Tj T* ET
 q
-1 0 0 1 314.9764 13 cm
+1 0 0 1 314.9764 3 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (100% of 13 overtakes were closer than 150 cm) Tj T* ET
+BT 1 0 0 1 0 2 Tm /F1 8 Tf 10 TL (38% of 24 overtakes were closer than 150 cm) Tj T* ET
 Q
 Q
 q
@@ -467,18 +467,18 @@ n 0 266 m 493.2283 266 l S
 n 0 250 m 493.2283 250 l S
 n 0 234 m 493.2283 234 l S
 n 0 218 m 493.2283 218 l S
-n 0 202 m 493.2283 202 l S
-n 0 186 m 493.2283 186 l S
-n 0 170 m 493.2283 170 l S
-n 0 154 m 493.2283 154 l S
-n 0 138 m 493.2283 138 l S
-n 0 122 m 493.2283 122 l S
-n 0 106 m 493.2283 106 l S
-n 0 90 m 493.2283 90 l S
-n 0 74 m 493.2283 74 l S
-n 0 58 m 493.2283 58 l S
-n 0 42 m 493.2283 42 l S
-n 0 26 m 493.2283 26 l S
+n 0 192 m 493.2283 192 l S
+n 0 176 m 493.2283 176 l S
+n 0 160 m 493.2283 160 l S
+n 0 144 m 493.2283 144 l S
+n 0 128 m 493.2283 128 l S
+n 0 112 m 493.2283 112 l S
+n 0 96 m 493.2283 96 l S
+n 0 80 m 493.2283 80 l S
+n 0 64 m 493.2283 64 l S
+n 0 48 m 493.2283 48 l S
+n 0 32 m 493.2283 32 l S
+n 0 16 m 493.2283 16 l S
 n 0 0 m 493.2283 0 l S
 Q
 Q
@@ -588,7 +588,7 @@ xref
 trailer
 <<
 /ID 
-[<3a2a3317672445dff29c16e96b958073><3a2a3317672445dff29c16e96b958073>]
+[<c6df10c80ae08b96da9a74b632f4093a><c6df10c80ae08b96da9a74b632f4093a>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 6 0 R
@@ -596,5 +596,5 @@ trailer
 /Size 9
 >>
 startxref
-13070
+12987
 %%EOF

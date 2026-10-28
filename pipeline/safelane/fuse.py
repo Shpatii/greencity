@@ -1,4 +1,4 @@
-"""P1: one row per segment, raw metrics + f_* factors."""
+"""One row per segment, raw metrics + f_* factors."""
 
 import ast
 import math
@@ -82,19 +82,41 @@ def share_below_150(hist):
     return sum(hist[:N_BELOW_150]) / total if total else None
 
 
-def shrunk_share(share, n_overtakes, city_share, k=config.SAFETY_PRIOR_K):
-    """(n_below + k * city_share) / (n_overtakes + k): one close pass alone no longer means f_safety = 1.
-
-    n_below is recovered from the rounded share, so the factor can be recomputed from the output file.
-    """
-    return (round(share * n_overtakes) + k * city_share) / (n_overtakes + k)
+def pass_severity(hist):
+    """Mean closeness of the passes, 0-1: SEVERITY_WEIGHTS per bin, so 40 cm counts more than 140 cm."""
+    total = sum(hist)
+    return sum(n * w for n, w in zip(hist, config.SEVERITY_WEIGHTS)) / total if total else None
 
 
-def factors(m, danger_p95, city_share):
+def shrink(value, n, prior, k=config.SAFETY_PRIOR_K):
+    """(n * value + k * prior) / (n + k): one close pass alone no longer means f_safety = 1."""
+    return (n * value + k * prior) / (n + k)
+
+
+def passes_excluded(m, car_free=False):
+    """Why close passes and danger points on this segment do not count (CONTRACT 3.2), or None."""
+    if car_free:
+        return "car_free"
+    if not m["n_overtakes"] and not m["danger_per_100m"]:
+        return None  # nothing to exclude
+    speed = m["avg_speed_kmh"]
+    if speed is not None and speed < config.STATIONARY_SPEED_KMH:
+        return "stationary"
+    if m["length_m"] < config.MIN_PASS_LENGTH_M:
+        return "short"
+    if m["n_overtakes"] < config.MIN_OVERTAKES:
+        return "few_overtakes"
+    return None
+
+
+def factors(m, danger_p95, city_severity):
     """CONTRACT 3.2 factor rules: ({f_key: 0-1}, [keys with no data])."""
-    share, dp, flow = m["share_below_150"], m["danger_per_100m"], m["traffic_flow"]
+    counted = m.get("passes_excluded") is None
+    severity = m["pass_severity"] if counted else None
+    dp = m["danger_per_100m"] if counted else None
+    flow = m["traffic_flow"]
     raw = {
-        "safety": None if share is None else shrunk_share(share, m["n_overtakes"], city_share),
+        "safety": None if severity is None else shrink(severity, m["n_overtakes"], city_severity),
         "danger": None if dp is None else (min(1.0, dp / danger_p95) if danger_p95 else 0.0),
         "surface": m["roughness_norm"],
         "air": m["mean_pm_risk"],
@@ -130,18 +152,21 @@ def _match_lines(layer, base, key):
     return seg
 
 
-def path_name(street):
-    return f"Path along {street}"
+def path_name(street, highway=None):
+    """Name for an unnamed segment near street; a driveway or parking aisle is not a path."""
+    return f"Service road off {street}" if highway == "service" else f"Path along {street}"
 
 
-def _fill_names(names, base):
-    """Unnamed segments (OSM footways, cycleways) take the nearest named street within NAME_FALLBACK_M."""
+def _fill_names(names, base, highway):
+    """Unnamed segments (OSM footways, cycleways, service roads) take the nearest named street within
+    NAME_FALLBACK_M."""
     named = names.notna()
     todo = ~named
     if not todo.any() or not named.any():
         return names
     hit = _nearest(base.geometry[todo], base[named], config.NAME_FALLBACK_M)
-    return names.where(named, hit.map(names).map(path_name))
+    fallback = pd.Series([path_name(names[j], highway[i]) for i, j in hit.items()], index=hit.index, dtype=object)
+    return names.where(named, fallback)
 
 
 def _undirected(base):
@@ -177,8 +202,19 @@ def _str(v):
     return None if v is None or pd.isna(v) else str(v)
 
 
+def first_highway(osm_ids, payload):
+    """OSM highway of each segment's first way found by id; None without the OSM cache or a match."""
+    if payload is None:
+        return pd.Series(None, index=osm_ids.index, dtype=object)
+    highways = {str(el["id"]): (el.get("tags") or {}).get("highway")
+                for el in payload.get("elements", []) if el.get("type") == "way"}
+    return osm_ids.map(lambda v: next((highways[i] for i in str(v).split(",") if i in highways), None)
+                       if v is not None else None)
+
+
 def build(base_name="road_network"):
-    """Return (base GeoDataFrame, metrics DataFrame on the base index, match report rows, twin count).
+    """Return (base GeoDataFrame, metrics DataFrame on the base index, match report rows, twin count,
+    car-free data dropped).
 
     Only representative rows of an undirected edge get data; their twins end with n_points 0.
     """
@@ -192,8 +228,13 @@ def build(base_name="road_network"):
     m["id"] = [f"seg_{i:06d}" for i in base.index]
     m["osm_id"] = base["osmid"].map(lambda v: ",".join(str(x) for x in parse_list(v)) or None)
     names = base["name"].map(lambda v: next((str(x) for x in parse_list(v)), None)).astype(object)
-    m["name"] = _fill_names(names, base)
+    highway = first_highway(m["osm_id"], osm.load_cached())
+    m["name"] = _fill_names(names, base, highway)
     m["length_m"] = base.length
+
+    # CONTRACT 3.2 (v1.2): no car overtakes a rider on a car-free way, so drop that sensor data.
+    no_cars = highway.isin(config.CAR_FREE_HIGHWAYS)
+    dropped = {}
 
     report, lines = [], {}
     for key, (col, _) in LINE_LAYERS.items():
@@ -202,12 +243,20 @@ def build(base_name="road_network"):
         report.append((key, len(g), int(g["seg"].notna().sum())))
         lines[key] = _merge_twins(g.dropna(subset=["seg"]), canon, LINE_VALUES[key]).astype({"seg": int})
 
+    m["car_free"] = no_cars
     o = lines["overtaking"]
+    on_path = no_cars.loc[o["seg"]].to_numpy()
+    dropped["overtaking"] = {
+        "lines": int(on_path.sum()),
+        "overtakes": int(o.loc[on_path, "Overtaking Distance Counts"].map(lambda v: sum(parse_histogram(v))).sum()),
+    }
+    o = lines["overtaking"] = o[~on_path]
     bins = pd.DataFrame(o["Overtaking Distance Counts"].map(parse_histogram).tolist(), index=o.index)
     bins = bins.groupby(o["seg"]).sum()
     total = bins.sum(axis=1)
     m["n_overtakes"] = total.reindex(m.index, fill_value=0).astype(int)
     m["share_below_150"] = bins.iloc[:, :N_BELOW_150].sum(axis=1) / total.where(total > 0)
+    m["pass_severity"] = (bins * config.SEVERITY_WEIGHTS).sum(axis=1) / total.where(total > 0)
     m["avg_overtake_cm"] = _wavg(o, "Average Overtaking Distance cm", "Number of Points")
     m["roughness_norm"] = (_wavg(lines["roughness"], "Normalized Roughness", "Number of Boxes") / 100).clip(0, 1)
     m["traffic_flow"] = _wavg(lines["traffic_flow"], "avg_traffic_flow", "points_in_segment")
@@ -221,6 +270,10 @@ def build(base_name="road_network"):
         g = _load(key)
         seg = _nearest(g.geometry, base, config.MATCH_DISTANCE_M).map(canon)
         report.append((key, len(g), len(seg)))
+        if key == "danger":  # from the overtaking sensor, like the passes; fine dust stays
+            on_path = no_cars.loc[seg].to_numpy()
+            dropped["danger"] = {"points": int(on_path.sum())}
+            seg = seg[~on_path]
         points[key] = g.loc[seg.index, col].groupby(seg).agg(["size", "mean"])
 
     # Danger points come from the overtaking sensor: no points on a segment it measured
@@ -231,11 +284,12 @@ def build(base_name="road_network"):
     m["danger_per_100m"] = (n_danger / m["length_m"].clip(lower=config.DANGER_MIN_LENGTH_M) * 100).where(measured)
     m["mean_danger_risk"] = points["danger"]["mean"]
     m["mean_pm_risk"] = points["danger_pm"]["mean"]
-    return base, m, report, n_twins
+    return base, m, report, n_twins, dropped
 
 
 def to_features(m):
-    """Contract properties per row (rounded; factors computed from the rounded metrics), danger_p95, city_share."""
+    """Contract properties per row (rounded; factors computed from the rounded metrics), danger_p95,
+    city_share, city_severity."""
     rows = []
     for r in m.itertuples():
         rows.append({
@@ -246,6 +300,7 @@ def to_features(m):
             "n_points": int(r.n_points),
             "n_overtakes": int(r.n_overtakes),
             "share_below_150": _round(r.share_below_150, 4),
+            "pass_severity": _round(r.pass_severity, 4),
             "avg_overtake_cm": _round(r.avg_overtake_cm, 1),
             "danger_per_100m": _round(r.danger_per_100m, 3),
             "mean_danger_risk": _round(r.mean_danger_risk, 4),
@@ -254,17 +309,23 @@ def to_features(m):
             "traffic_flow": _round(r.traffic_flow, 4),
             "avg_speed_kmh": _round(r.avg_speed_kmh, 2),
         })
-    positive = [p["danger_per_100m"] for p in rows if p["danger_per_100m"]]
+        rows[-1]["passes_excluded"] = passes_excluded(rows[-1], car_free=bool(r.car_free))
+    # f_danger and the f_safety prior are relative to the segments whose passes count.
+    counted = [p for p in rows if p["passes_excluded"] is None and p["n_overtakes"]]
+    positive = [p["danger_per_100m"] for p in counted if p["danger_per_100m"]]
     danger_p95 = round(float(pd.Series(positive).quantile(0.95)), 3) if positive else 0.0
     n_total = sum(p["n_overtakes"] for p in rows if p["share_below_150"] is not None)
     n_below = sum(round(p["share_below_150"] * p["n_overtakes"]) for p in rows if p["share_below_150"] is not None)
     city_share = round(n_below / n_total, 4) if n_total else 0.0
+    n_counted = sum(p["n_overtakes"] for p in counted)
+    city_severity = (round(sum(p["n_overtakes"] * p["pass_severity"] for p in counted) / n_counted, 4)
+                     if n_counted else 0.0)
     for p in rows:
-        f, missing = factors(p, danger_p95, city_share)
+        f, missing = factors(p, danger_p95, city_severity)
         p.update({k: round(v, 4) for k, v in f.items()})
         p.update({"missing": missing, "confidence": 0.0, "eligible": False,
                   "score": None, "rank": None, "reason_texts": {}})
-    return rows, danger_p95, city_share
+    return rows, danger_p95, city_share, city_severity
 
 
 OSM_FIELDS = ("highway", "maxspeed_kmh", "lanes", "infra_class")
@@ -276,15 +337,18 @@ def _plain_or_none(v):
     return int(v) if isinstance(v, float) and v.is_integer() else (v.item() if hasattr(v, "item") else v)
 
 
-def add_osm(geometry, rows):
+def add_osm(geometry, rows, allow_missing=False):
     """CONTRACT 3.2b: OSM fields on rows (in place) from data/raw/osm_overpass.json.
 
-    Returns (meta additions, stats report). Without the cache the fields stay null and a warning is printed.
+    Returns (meta additions, stats report). Without the cache it raises, unless allow_missing:
+    then the fields stay null and a warning is printed.
     """
     payload = osm.load_cached()
     if payload is None:
-        print("\nWARNING: data/raw/osm_overpass.json missing; OSM fields stay null. "
-              "Run `python -m safelane.osm` (or `python run.py --ingest`) first.")
+        hint = "Run `python -m safelane.osm` (or `python run.py --ingest`) first."
+        if not allow_missing:
+            raise FileNotFoundError(f"data/raw/osm_overpass.json missing. {hint}")
+        print(f"\nWARNING: data/raw/osm_overpass.json missing; OSM fields stay null. {hint}")
         for p in rows:
             p.update(dict.fromkeys(OSM_FIELDS))
         return {"osm_fetched_at": None, "attribution": osm.ATTRIBUTION}, None
@@ -308,24 +372,36 @@ def _print_reports(m, kept, report, n_twins):
     print(f"  median n_points (kept): {n[n >= 1].median():g}")
 
 
-def run(base="road_network"):
+def run(base="road_network", allow_missing_osm=False):
     print(f"fuse (base: {base})")
-    base_gdf, m, report, n_twins = build(base)
+    base_gdf, m, report, n_twins, dropped = build(base)
     keep = m["n_points"] >= 1
-    rows, danger_p95, city_share = to_features(m[keep])
+    rows, danger_p95, city_share, city_severity = to_features(m[keep])
     _print_reports(m, len(rows), report, n_twins)
     # After the factors, before scoring; the score does not use these fields.
-    osm_meta, osm_report = add_osm(base_gdf.geometry[keep], rows)
+    osm_meta, osm_report = add_osm(base_gdf.geometry[keep], rows, allow_missing=allow_missing_osm)
 
     overtaking = next(r for r in report if r[0] == "overtaking")
     if base == "road_network" and overtaking[2] < 0.5 * overtaking[1]:
         print("\nWARNING: < 50% of overtaking lines matched; try `python run.py --fuse --base bumpy_roads`")
-    print(f"danger_p95: {danger_p95}, city_share_below_150: {city_share}")
+    excluded = {}
+    for p in rows:
+        if p["passes_excluded"]:
+            excluded[p["passes_excluded"]] = excluded.get(p["passes_excluded"], 0) + 1
+    n_counted = sum(1 for p in rows if p["passes_excluded"] is None and p["n_overtakes"])
+    print(f"car-free ways: dropped {dropped['overtaking']['overtakes']} overtakes "
+          f"({dropped['overtaking']['lines']} lines) and {dropped['danger']['points']} danger points")
+    print(f"passes counted on {n_counted} segments; not counted: {excluded}")
+    print(f"danger_p95: {danger_p95}, city_share_below_150: {city_share}, city_pass_severity: {city_severity}")
     stats = {
         "n_base_edges": len(m),
         "n_twins_merged": n_twins,
         "match": {key: {"features": n, "matched": hit, "share": round(hit / n, 4) if n else 0.0}
                   for key, n, hit in report},
         "osm": osm_report,
+        "car_free_dropped": dropped,
+        "passes_counted": n_counted,
+        "passes_excluded": excluded,
     }
-    export.write(base_gdf.geometry[keep], rows, danger_p95, city_share, stats, meta_extra=osm_meta)
+    export.write(base_gdf.geometry[keep], rows, danger_p95, city_share, stats,
+                 meta_extra={**osm_meta, "city_pass_severity": city_severity})

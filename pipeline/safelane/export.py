@@ -1,4 +1,4 @@
-"""P1: write data/out/, copy to web/public/data/ (and the PDF report to web/public/)."""
+"""Write data/out/, copy to web/public/data/ (and the PDF report to web/public/)."""
 
 import json
 import shutil
@@ -16,7 +16,7 @@ OUT_FILES = ("segments.geojson", "meta.json")
 OPTIONAL_OUT_FILES = ("counters.geojson",)  # safelane/counters.py; the web app hides the layer without it
 REPORT = "report.pdf"  # safelane/report.py; served at /report.pdf
 COORD_DECIMALS = 5  # ~1 m; keeps segments.geojson under 5 MB
-CONTRACT_VERSION = "1.1"
+CONTRACT_VERSION = "1.2"
 VIEW_QUANTILES = (0.02, 0.98)  # meta.bbox: initial map view, ignores far-out rides
 
 
@@ -70,6 +70,11 @@ def write(geometry, rows, danger_p95, city_share, stats, meta_extra=None):
         "city_share_below_150": city_share,
         "safety_prior_k": config.SAFETY_PRIOR_K,
         "danger_min_length_m": config.DANGER_MIN_LENGTH_M,
+        "severity_weights": list(config.SEVERITY_WEIGHTS),
+        "car_free_highways": list(config.CAR_FREE_HIGHWAYS),
+        "stationary_speed_kmh": config.STATIONARY_SPEED_KMH,
+        "min_pass_length_m": config.MIN_PASS_LENGTH_M,
+        "min_overtakes": config.MIN_OVERTAKES,
         "default_weights": config.DEFAULT_WEIGHTS,
         "bbox": _view_bbox(wgs),
         **(meta_extra or {}),

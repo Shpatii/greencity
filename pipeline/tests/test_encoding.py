@@ -142,7 +142,7 @@ def test_export_score_publish_preserve_unicode_geometry_and_scores(tmp_path, mon
     monkeypatch.setattr(export, "WEB_DIR", web)
     props = collection()["features"][0]["properties"]
     geometry = gpd.GeoSeries([LineString(EXAMPLE_FEATURE["geometry"]["coordinates"])], crs="EPSG:4326")
-    export.write(geometry, [props], danger_p95=5.0)
+    export.write(geometry, [props], danger_p95=5.0, city_share=0.5, stats={})
     original = json.loads((out / "segments.geojson").read_bytes().decode("utf-8"))
     meta_path = out / "meta.json"
     meta = json.loads(meta_path.read_bytes().decode("utf-8"))

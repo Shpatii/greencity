@@ -301,6 +301,11 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep camera padding in sync when the floating panel appears or disappears.
+  useEffect(() => {
+    mapRef.current?.setPadding(inset ?? { top: 0, right: 0, bottom: 0, left: 0 });
+  }, [inset]);
+
   // New features (only when the data loads). Weight changes don't come through here.
   useEffect(() => {
     const source = mapRef.current?.getSource('segments') as maplibregl.GeoJSONSource | undefined;

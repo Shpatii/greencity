@@ -17,6 +17,7 @@ const mockMapInstance = {
   addControl: jest.fn(),
   getSource: jest.fn(),
   fitBounds: jest.fn(),
+  setPadding: jest.fn(),
   setFilter: jest.fn(),
   flyTo: jest.fn(),
   getCanvas: jest.fn(() => ({ style: { cursor: '' } })),
@@ -26,6 +27,7 @@ export const Map = jest.fn(() => mockMapInstance);
 export const Popup = jest.fn(() => mockPopupInstance);
 export const NavigationControl = jest.fn();
 export const setWorkerUrl = jest.fn();
+export const addProtocol = jest.fn();
 
 // maplibre-gl v6 has no default export; the app uses `import * as maplibregl from 'maplibre-gl'`.
 

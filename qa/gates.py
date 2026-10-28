@@ -10,7 +10,7 @@ new data is committed; otherwise the job fails and the published data stays as i
   G3 data       qa/check_data.py: no FAIL (A9 = at least 8 of the top 10 OK under S1-S4)
   G4 drift      n_eligible within +-MAX_ELIGIBLE_DRIFT of the published data at --baseline
 
-Then reports whether web/public/data/segments.geojson differs from the baseline. On GitHub
+Then reports whether any published output differs from the baseline. On GitHub
 Actions it writes `changed=true|false` to $GITHUB_OUTPUT. Exit code 1 when a gate fails.
 """
 import argparse
@@ -23,6 +23,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "web/public/data"
 MAX_ELIGIBLE_DRIFT = 0.2
+PUBLISHED_FILES = (
+    f"{PUBLISHED}/segments.geojson",
+    f"{PUBLISHED}/meta.json",
+    f"{PUBLISHED}/counters.geojson",
+    "web/public/report.pdf",
+)
 
 
 def run(label, cmd, cwd=ROOT):
@@ -62,9 +68,16 @@ def main(argv=None):
               f"{'PASS' if g4 else 'FAIL'}")
         ok &= g4
 
-    old_segments = at_baseline(args.baseline, f"{PUBLISHED}/segments.geojson")
-    changed = old_segments != (ROOT / PUBLISHED / "segments.geojson").read_bytes()
-    print(f"\nsegments.geojson {'changed' if changed else 'unchanged'} since {args.baseline}")
+    changed_files = []
+    for path in PUBLISHED_FILES:
+        current = ROOT / path
+        content = current.read_bytes() if current.exists() else None
+        if at_baseline(args.baseline, path) != content:
+            changed_files.append(path)
+    changed = bool(changed_files)
+    print(f"\nPublished outputs {'changed' if changed else 'unchanged'} since {args.baseline}")
+    for path in changed_files:
+        print(f"  {path}")
     if os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
             f.write(f"changed={'true' if changed and ok else 'false'}\n")

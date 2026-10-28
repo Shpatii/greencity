@@ -41,11 +41,18 @@ export default function MapPage() {
   const [showCounters, setShowCounters] = useState(false);
   const recomputeMsRef = useRef(0);
   // From md up the panel and legend float over the map; keep the streets out from under them.
-  const [inset] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
-      ? { top: 60, right: 444, bottom: 16, left: 16 }
-      : undefined,
-  );
+  const [desktop, setDesktop] = useState(false);
+  const inset = useMemo(() => desktop
+    ? { top: 60, right: 444, bottom: 16, left: 16 }
+    : undefined, [desktop]);
+
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 768px)');
+    const update = () => setDesktop(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     // Landing page links here with ?id=seg_… to open one street.

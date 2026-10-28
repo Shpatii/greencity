@@ -8,6 +8,7 @@ import geopandas as gpd
 import pandas as pd
 
 from safelane import config, export
+from safelane.json_io import read_source_json
 
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 FACTORS = ("safety", "danger", "surface", "air", "flow")
@@ -104,7 +105,9 @@ def factors(m, danger_p95, city_share):
 
 
 def _load(key):
-    return gpd.read_file(RAW_DIR / f"{config.COLLECTIONS[key]}.geojson").to_crs(config.METRIC_CRS)
+    path = RAW_DIR / f"{config.COLLECTIONS[key]}.geojson"
+    read_source_json(path)  # Also migrate legacy caches when running --fuse alone.
+    return gpd.read_file(path, encoding="utf-8").to_crs(config.METRIC_CRS)
 
 
 def _nearest(geoms, base, max_distance):

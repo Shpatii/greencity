@@ -33,7 +33,7 @@ def _coords(line, decimals=COORD_DECIMALS):
 def _write_json(path, obj, indent=None):
     text = json.dumps(obj, ensure_ascii=False, indent=indent, separators=None if indent else (",", ":"))
     tmp = path.with_suffix(path.suffix + ".part")
-    tmp.write_text(text + "\n")
+    tmp.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     tmp.replace(path)
 
 

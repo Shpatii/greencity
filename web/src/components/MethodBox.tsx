@@ -9,6 +9,8 @@ const FACTORS: FactorKey[] = ['safety', 'danger', 'surface', 'air', 'flow'];
 interface Props {
   weights: Weights;
   meta: Meta;
+  /** Add the MobiData licence line (the bike counter layer is on). */
+  showCountersSource?: boolean;
 }
 
 function formatGeneratedAt(iso: string): string {
@@ -21,7 +23,7 @@ function formatGeneratedAt(iso: string): string {
   }).format(date);
 }
 
-export default function MethodBox({ weights, meta }: Props) {
+export default function MethodBox({ weights, meta, showCountersSource = false }: Props) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const text = copy.methodBox;
@@ -86,6 +88,7 @@ export default function MethodBox({ weights, meta }: Props) {
         </div>
 
         <p className="text-xs text-neutral-700">{text.dataSource(formatGeneratedAt(meta.generated_at))}</p>
+        {showCountersSource && <p className="text-xs text-neutral-700">{text.countersSource}</p>}
       </div>
     </section>
   );

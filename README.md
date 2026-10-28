@@ -80,10 +80,12 @@ Run all stages, then the test suite:
 
 | Stage | Flag | Result |
 | --- | --- | --- |
-| Ingest | `--ingest` | Downloads source datasets to `data/raw/`, or reuses cached files. |
+| Ingest | `--ingest` | Downloads the ATRAI datasets and the OpenStreetMap ways (Overpass API, `data/raw/osm_overpass.json`) to `data/raw/`, or reuses cached files. |
 | Fuse | `--fuse` | Combines datasets into segments and writes `data/out/segments.geojson` and `data/out/meta.json`. |
 | Score | `--score` | Updates segment scores, rankings, and metadata in `data/out/`. |
-| Publish | `--publish` | Copies both output files into `web/public/data/` for the frontend. |
+| Report | `--report` | Writes the printable top-20 list to `data/out/report.pdf`. |
+| Counters | `--counters` | MobiData BW bike counters inside the map area → `data/out/counters.geojson` (map context only). |
+| Publish | `--publish` | Copies the output files (and `counters.geojson` if present) into `web/public/data/` and `report.pdf` into `web/public/` for the frontend. |
 
 To run individual stages, replace `--all` in your platform's command with one or more flags, such as `--fuse --score --publish`. Ingest must have run before fusion; fusion must have run before scoring or publishing.
 
@@ -114,3 +116,56 @@ python3.11 -m http.server 3000 --directory out
 ```
 
 Open [http://localhost:3000](http://localhost:3000). Press **Ctrl+C** to stop the preview server.
+
+## Rebuild from scratch
+
+From a fresh clone to a built static site. On Windows, use the PowerShell equivalents from the sections above (`py -3.11`, `.\.venv\Scripts\python.exe`, `npm.cmd`).
+
+```bash
+git clone https://github.com/Shpatii/greencity.git
+cd greencity
+
+# Pipeline: Python 3.11 venv, dependencies, all stages
+cd pipeline
+python3.11 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python run.py --all
+cd ..
+
+# Web app: exact dependencies from package-lock.json, static build to web/out/
+cd web
+npm ci
+npm run build
+```
+
+`run.py --all` downloads the source datasets from the ATRAI API into `data/raw/` on the first run and reuses those cached files afterwards, so later runs work offline and give the same result. `data/raw/` is not committed. To fetch fresh data, run `.venv/bin/python run.py --all --refresh` (or delete `data/raw/`); this overwrites the cache and regenerates everything in `data/out/` and `web/public/`.
+
+The same steps are in the `Makefile` (macOS/Linux, after creating `pipeline/.venv`):
+
+| Target | Does |
+| --- | --- |
+| `make data` | Installs pipeline requirements, runs `run.py --all`. `make data REFRESH=1` re-downloads `data/raw/`. |
+| `make test` | `pytest` in `pipeline/`, Jest in `web/`. |
+| `make web` | `npm ci` and `npm run build` in `web/` (output in `web/out/`). |
+| `make all` | `data`, then `test`, then `web`. |
+
+## Deploy (Vercel)
+
+The app is a static export (`output: 'export'` in `web/next.config.mjs`): no server code, only files. Vercel builds it from `web/` on every push; `main` becomes the production site and other branches and pull requests get preview URLs. `web/vercel.json` sets the install and build commands, turns off caching of `/data/*` so new data shows right after a deploy, and allows `/embed` to be framed by any site.
+
+The data is not rebuilt on Vercel: run the pipeline locally, commit `data/out/` and `web/public/`, and push.
+
+## Embed in the Green City Dashboard
+
+`/embed` shows the map, the legend and the top 5 streets with the published scores, without the header, sliders or method box. It fills the whole iframe (side panel on the right, or below the map when the iframe is narrower than 640 px; best from about 900 px wide) and links to the full map in a new tab.
+
+```html
+<iframe
+  src="https://YOUR-PROJECT.vercel.app/embed"
+  title="SafeLane HN: cycling safety priority map for Heilbronn"
+  style="width: 100%; height: 600px; border: 0;"
+  loading="lazy"
+></iframe>
+```
+
+Replace `YOUR-PROJECT.vercel.app` with the production domain from Vercel. A height of at least 480 px keeps both the map and the list readable.

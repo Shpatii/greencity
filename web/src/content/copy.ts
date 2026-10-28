@@ -1,6 +1,7 @@
 // P4: all user-facing text.
 // TODO(de): add German copy as `copyDe: Copy` and pick by locale.
-import type { FactorKey } from '@/lib/types';
+import type { FactorKey, InfraClass } from '@/lib/types';
+import type { PresetKey } from '@/lib/weights';
 
 type FiveBands<T> = readonly [T, T, T, T, T];
 
@@ -22,6 +23,10 @@ export interface Copy {
     colName: string;
     colScore: string;
     colPoints: string;
+    /** Shown for 2 s next to the title after the #1 street changes. */
+    changed: string;
+    /** Empty list while "Show only infrastructure gaps" is on. */
+    noGaps: string;
   };
   factorLabels: Record<FactorKey, string>;
   factorTooltips: Record<FactorKey, string>;
@@ -41,6 +46,22 @@ export interface Copy {
     limitsTitle: string;
     limits: readonly string[];
     dataSource: (generatedAt: string) => string;
+    countersSource: string;
+  };
+  embed: {
+    listTitle: string;
+    /** Link from the embed to the full app, opens outside the iframe. */
+    openFull: string;
+  };
+  downloads: {
+    csv: string;
+    /** Link to web/public/report.pdf (pipeline: python run.py --report --publish). */
+    pdf: string;
+    pdfHint: string;
+  };
+  csv: {
+    /** Column headers of the CSV export, in order. */
+    header: readonly string[];
   };
   weightSliders: {
     title: string;
@@ -48,6 +69,8 @@ export interface Copy {
     reset: string;
     /** Screen-reader label for one slider, e.g. "Close passes weight". */
     sliderLabel: (factor: string) => string;
+    presetsLabel: string;
+    presets: Record<PresetKey, string>;
   };
   emptyStates: {
     noSegmentSelected: string;
@@ -55,7 +78,27 @@ export interface Copy {
     noRank: string;
     notEnoughMeasurements: string;
   };
+  /** © line for the segment data on the map (meta.attribution wins when present). */
+  osmAttribution: string;
+  infraLabels: Record<InfraClass, string>;
+  layers: {
+    title: string;
+    gapsOnly: string;
+    gapsHint: string;
+    counters: string;
+  };
+  counters: {
+    /** Map attribution while the counter layer is shown. */
+    attribution: string;
+    perDay: (bikes: string) => string;
+    source: string;
+  };
   cardLabels: {
+    infrastructure: string;
+    speedLimit: string;
+    speedKmh: (kmh: number) => string;
+    speedUnknown: string;
+    suggestedMeasure: string;
     score: string;
     measurements: string;
     overtakes: string;
@@ -114,6 +157,8 @@ export const copy: Copy = {
     colName: 'Street',
     colScore: 'Score',
     colPoints: 'Points',
+    changed: 'Ranking changed',
+    noGaps: 'No street in the top 25% lacks protected bike infrastructure.',
   },
 
   factorLabels: {
@@ -162,6 +207,25 @@ export const copy: Copy = {
       'Some streets have only a few measurements. Their scores are less certain, so check the confidence on each card.',
     ],
     dataSource: (generatedAt) => `Data: ATRAI senseBox:bike, generated ${generatedAt}`,
+    countersSource: 'Bike counters: MobiData BW, Eco-Counter Fahrradzählstellen, Datenlizenz Deutschland – Namensnennung – Version 2.0.',
+  },
+
+  embed: {
+    listTitle: 'Top 5 priority streets',
+    openFull: 'Open full map ↗',
+  },
+
+  downloads: {
+    csv: 'Download CSV',
+    pdf: 'Printable priority list (PDF)',
+    pdfHint: 'Top 20 with the default weights',
+  },
+
+  csv: {
+    header: [
+      'Rank', 'Street', 'OSM ID', 'Score', 'Confidence', 'Measurements',
+      'Overtakes closer than 150 cm (%)', 'Top reason',
+    ],
   },
 
   weightSliders: {
@@ -169,6 +233,8 @@ export const copy: Copy = {
     hint: 'Move a slider and the map and top 10 update. The weights always add up to 100%.',
     reset: 'Reset weights',
     sliderLabel: (factor) => `${factor} weight`,
+    presetsLabel: 'Presets',
+    presets: { safetyFirst: 'Safety first', comfort: 'Comfort', cleanAir: 'Clean air' },
   },
 
   emptyStates: {
@@ -178,7 +244,33 @@ export const copy: Copy = {
     notEnoughMeasurements: 'Not enough measurements to calculate a score.',
   },
 
+  osmAttribution: '© OpenStreetMap contributors',
+  infraLabels: {
+    separated: 'Separated',
+    bike_street: 'Bike street',
+    painted_lane: 'Painted lane',
+    shared_bus: 'Shared bus lane',
+    shared: 'Shared',
+    none: 'No bike infrastructure',
+  },
+  layers: {
+    title: 'Map layers',
+    gapsOnly: 'Show only infrastructure gaps',
+    gapsHint: 'Top 25% streets (default weights) with no, shared or only painted bike lanes.',
+    counters: 'Bike counters',
+  },
+  counters: {
+    attribution: 'Bike counters: MobiData BW, DL-DE-BY-2.0',
+    perDay: (bikes) => `${bikes} bikes per day (average, last 365 days)`,
+    source: 'Source: MobiData BW, Eco-Counter',
+  },
+
   cardLabels: {
+    infrastructure: 'Infrastructure',
+    speedLimit: 'Speed limit',
+    speedKmh: (kmh) => `${kmh} km/h`,
+    speedUnknown: 'unknown',
+    suggestedMeasure: 'Suggested measure',
     score: 'Priority score',
     measurements: 'Measurements',
     overtakes: 'Overtakes',

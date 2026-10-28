@@ -1,4 +1,5 @@
 // P4: colour scale for priority scores (0–100).
+import type { InfraClass } from '@/lib/types';
 
 // Inferno-style sequential ramp, low priority (light) → high priority (dark).
 // Lightness steps evenly (L* 85 → 17), so bands stay ordered under protan/deutan/tritan vision.
@@ -22,3 +23,19 @@ export function colorForScore(score: number | null): string {
   const band = scoreBreaks.filter((b) => score >= b).length;
   return scoreColors[band];
 }
+
+// Infrastructure badges (SegmentCard), most to least protection. Dark text on a light fill, AA contrast.
+export const infraColors: Record<InfraClass, { bg: string; text: string }> = {
+  separated: { bg: '#dcfce7', text: '#14532d' },
+  bike_street: { bg: '#ccfbf1', text: '#134e4a' },
+  painted_lane: { bg: '#fef3c7', text: '#78350f' },
+  shared_bus: { bg: '#ffedd5', text: '#7c2d12' },
+  shared: { bg: '#ffedd5', text: '#7c2d12' },
+  none: { bg: '#fee2e2', text: '#7f1d1d' },
+};
+
+// Bike counter points: teal, outside the yellow–purple score ramp; white ring for contrast on lines.
+export const counterColors = { fill: '#0f766e', stroke: '#ffffff' } as const;
+
+// Opacity of segments that are not infrastructure gaps while "Show only infrastructure gaps" is on.
+export const dimmedOpacity = 0.15;

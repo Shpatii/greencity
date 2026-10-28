@@ -99,6 +99,49 @@ Example feature (invented values, for shape only):
                    "air": "PM risk 0.31 (city scale 0-1)"}}}
 ```
 
+## 3.2b OSM street and bike-infrastructure fields (additive, v1.1)
+
+The pipeline joins every segment to OpenStreetMap ways (Overpass API, cached in `data/raw/osm_overpass.json`, fetched by `python -m safelane.osm` or `run.py --ingest`). These fields are **optional**: readers must work when they are absent (older data) or null (no OSM match). **They do not change the score**: confidence, eligible, score and rank are computed exactly as in 3.2.
+
+| Field | Type | Meaning | Written by |
+|---|---|---|---|
+| highway | string \| null | OSM `highway` of the (first) matched way | P1 fuse |
+| maxspeed_kmh | number \| null | Speed limit; highest of the matched ways | P1 fuse |
+| lanes | int \| null | OSM `lanes`; highest of the matched ways | P1 fuse |
+| infra_class | "separated" \| "bike_street" \| "painted_lane" \| "shared_bus" \| "shared" \| "none" \| null | Bike infrastructure; least protected of the matched ways; null = no OSM match | P1 fuse |
+| infra_gap | bool | eligible AND rank ≤ 25% of n_eligible AND infra_class in {none, shared, painted_lane} | P3 score |
+| suggested_measure | string \| null | Rule-based suggestion (below) | P3 score |
+
+Join: every id in `osm_id` (comma-separated) that exists in the Overpass result; segments without one take the nearest way within 10 m of their midpoint (EPSG:25832).
+
+maxspeed_kmh: numbers as km/h (`mph` converted); `DE:urban` 50, `DE:rural` 100, `DE:zone30` / `DE:zone:30` 30, `DE:zone20` 20, `DE:bicycle_road` 30, `DE:living_street` and `walk` 7; several values (`50;30`) give the highest; `none` and anything else null.
+
+infra_class, first match wins (cycleway\* = cycleway, cycleway:left, cycleway:right, cycleway:both; `opposite_x` counts as `x`):
+
+| Class | Rule |
+|---|---|
+| separated | highway=cycleway, or any cycleway\*=track, or any cycleway\*=separate (see below) |
+| bike_street | bicycle_road=yes or cyclestreet=yes |
+| painted_lane | any cycleway\*=lane, or cycleway:lane=advisory/exclusive (Schutzstreifen, Radfahrstreifen) |
+| shared_bus | any cycleway\*=share_busway |
+| shared | any cycleway\*=shared_lane |
+| none | everything else |
+
+cycleway\*=separate only says "mapped as its own way": it counts as separated when a highway=cycleway lies within 15 m of the segment midpoint and runs within 30° of the segment's direction there; otherwise none.
+
+suggested_measure, first match wins:
+
+| Rule | Measure |
+|---|---|
+| infra_class in {none, shared}, maxspeed_kmh ≥ 50, f_safety ≥ 0.3 | Protected bike lane or separated cycle track |
+| infra_class = painted_lane, f_safety ≥ 0.3 | Upgrade painted lane to a physically protected lane |
+| infra_class in {none, shared}, maxspeed_kmh ≤ 30 | Bicycle street (Fahrradstrasse) or traffic calming |
+| f_surface ≥ 0.6 | Resurface: rough or cobbled surface |
+| eligible | Check on site |
+| otherwise | null |
+
+meta.json adds `osm_fetched_at` (Overpass `timestamp_osm_base`, null without OSM data) and `attribution` ("© OpenStreetMap contributors, ODbL"). OSM data is © OpenStreetMap contributors under the ODbL; show the attribution wherever the data is shown.
+
 ## 3.3 meta.json
 
 ```json
@@ -119,6 +162,7 @@ Example feature (invented values, for shape only):
 ```ts
 export type FactorKey = 'safety' | 'danger' | 'surface' | 'air' | 'flow';
 export type Weights = Record<FactorKey, number>;
+export type InfraClass = 'separated' | 'bike_street' | 'painted_lane' | 'shared_bus' | 'shared' | 'none';
 
 export interface SegmentProps {
   id: string; osm_id: string | null; name: string | null; length_m: number;
@@ -131,6 +175,9 @@ export interface SegmentProps {
   missing: FactorKey[]; confidence: number; eligible: boolean;
   score: number | null; rank: number | null;
   reason_texts: Partial<Record<FactorKey, string>>;
+  // Contract 3.2b (OSM); absent in older data.
+  highway?: string | null; maxspeed_kmh?: number | null; lanes?: number | null;
+  infra_class?: InfraClass | null; infra_gap?: boolean; suggested_measure?: string | null;
 }
 
 export interface Meta {
@@ -138,6 +185,7 @@ export interface Meta {
   n_segments: number; n_eligible: number; min_points: number; confidence_n: number;
   danger_p95: number; city_share_below_150: number; safety_prior_k: number;
   danger_min_length_m: number; default_weights: Weights; bbox: [number, number, number, number];
+  osm_fetched_at?: string | null; attribution?: string;
 }
 ```
 
@@ -165,3 +213,4 @@ export interface Meta {
 | 1.1 | Merge both directions of a two-way street into one segment | Twins were ranked separately (same street twice) and the twin drawn on top took map clicks (G2 audit X1, B12e) |
 | 1.1 | f_safety shrunk toward city_share_below_150 with k = 10; danger_per_100m over max(length, 50 m) | 1–3 overtakes on 11–20 m junction stubs filled the top 10 (G2 audit A9) |
 | 1.1 | meta: city_share_below_150, safety_prior_k, danger_min_length_m; bbox = 2–98% view extent; stats.json | Make every factor reproducible from the published files |
+| 1.1 | Optional OSM fields (3.2b): highway, maxspeed_kmh, lanes, infra_class, infra_gap, suggested_measure; meta: osm_fetched_at, attribution | Show what infrastructure a priority street has and what fix it needs; additive, score unchanged |

@@ -128,4 +128,29 @@ describe('SegmentCard', () => {
     await userEvent.click(screen.getByRole('button', { name: '×' }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('shows infrastructure, speed limit and suggested measure (contract 3.2b)', () => {
+    const segment = makeFeature({
+      infra_class: 'painted_lane',
+      maxspeed_kmh: 50,
+      infra_gap: true,
+      suggested_measure: 'Upgrade painted lane to a physically protected lane',
+    });
+    render(<SegmentCard segment={segment} meta={meta} onClose={jest.fn()} />);
+    expect(screen.getByText('Painted lane')).toBeInTheDocument();
+    expect(screen.getByText('50 km/h')).toBeInTheDocument();
+    expect(screen.getByText(/Upgrade painted lane/)).toBeInTheDocument();
+  });
+
+  it('says "unknown" without a speed limit', () => {
+    render(<SegmentCard segment={makeFeature({ infra_class: 'none', maxspeed_kmh: null })} meta={meta} onClose={jest.fn()} />);
+    expect(screen.getByText('No bike infrastructure')).toBeInTheDocument();
+    expect(screen.getByText('unknown')).toBeInTheDocument();
+  });
+
+  it('hides the infrastructure row for v1.0 data without the fields', () => {
+    render(<SegmentCard segment={makeFeature({})} meta={meta} onClose={jest.fn()} />);
+    expect(screen.queryByText('Speed limit:')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Suggested measure/)).not.toBeInTheDocument();
+  });
 });

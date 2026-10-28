@@ -1,7 +1,7 @@
 import { copy } from '@/content/copy';
 import { FACTORS } from '@/lib/score';
 import type { Weights } from '@/lib/types';
-import { rebalance, sameWeights } from '@/lib/weights';
+import { PRESETS, rebalance, sameWeights, type PresetKey } from '@/lib/weights';
 
 interface Props {
   weights: Weights;
@@ -28,6 +28,24 @@ export default function WeightSliders({ weights, defaults, onChange }: Props) {
         </button>
       </div>
       <p className="mb-2 text-xs text-neutral-600">{text.hint}</p>
+      <div role="group" aria-label={text.presetsLabel} className="mb-3 flex flex-wrap gap-1.5">
+        {(Object.keys(PRESETS) as PresetKey[]).map((key) => {
+          const active = sameWeights(weights, PRESETS[key]);
+          return (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(PRESETS[key])}
+              className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 ${
+                active ? 'bg-blue-700 text-white ring-blue-700' : 'text-blue-800 ring-blue-200 hover:bg-blue-50'
+              }`}
+            >
+              {text.presets[key]}
+            </button>
+          );
+        })}
+      </div>
       <ul className="space-y-2">
         {FACTORS.map((key) => {
           const label = copy.factorLabels[key];

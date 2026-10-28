@@ -48,6 +48,18 @@ describe('RankList', () => {
     expect(screen.getByText('Score')).toBeInTheDocument();
   });
 
+  it('shows a custom empty text', () => {
+    render(<RankList segments={[]} selectedId={null} setSelectedId={jest.fn()} emptyText="Nothing here" />);
+    expect(screen.getByText('Nothing here')).toBeInTheDocument();
+  });
+
+  it('shows the ranking-changed hint only when asked', () => {
+    const { rerender } = render(<RankList segments={[]} selectedId={null} setSelectedId={jest.fn()} />);
+    expect(screen.queryByText('Ranking changed')).not.toBeInTheDocument();
+    rerender(<RankList segments={[]} selectedId={null} setSelectedId={jest.fn()} changed />);
+    expect(screen.getByText('Ranking changed')).toBeInTheDocument();
+  });
+
   it('renders top-10 eligible segments sorted by rank', () => {
     const segments = Array.from({ length: 15 }, (_, i) =>
       makeSegment({ id: `seg_${i}`, name: `Street ${i + 1}`, rank: i + 1, score: 80 - i }),

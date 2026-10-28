@@ -62,7 +62,16 @@
       "propertyNames": { "$ref": "#/$defs/factorKey" },
       "additionalProperties": { "type": "string" },
       "description": "Factor key -> one sentence, only for factors with data"
-    }
+    },
+    "highway": { "type": ["string", "null"], "description": "3.2b: OSM highway tag of the matched way" },
+    "maxspeed_kmh": { "type": ["number", "null"], "minimum": 0, "description": "3.2b: OSM speed limit in km/h; highest of the matched ways" },
+    "lanes": { "type": ["integer", "null"], "minimum": 0, "description": "3.2b: OSM lanes; highest of the matched ways" },
+    "infra_class": {
+      "enum": ["separated", "bike_street", "painted_lane", "shared_bus", "shared", "none", null],
+      "description": "3.2b: bike infrastructure, least protected of the matched ways; null = no OSM match"
+    },
+    "infra_gap": { "type": "boolean", "description": "3.2b: eligible, rank in the top 25% of eligible, infra_class none/shared/painted_lane" },
+    "suggested_measure": { "type": ["string", "null"], "description": "3.2b: rule-based suggestion" }
   },
   "required": [
     "id", "osm_id", "name", "length_m", "n_points", "n_overtakes",

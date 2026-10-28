@@ -7,7 +7,7 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 
-from safelane import config, export
+from safelane import config, export, osm
 from safelane.json_io import read_source_json
 
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
@@ -267,6 +267,36 @@ def to_features(m):
     return rows, danger_p95, city_share
 
 
+OSM_FIELDS = ("highway", "maxspeed_kmh", "lanes", "infra_class")
+
+
+def _plain_or_none(v):
+    if v is None or pd.isna(v):
+        return None
+    return int(v) if isinstance(v, float) and v.is_integer() else (v.item() if hasattr(v, "item") else v)
+
+
+def add_osm(geometry, rows):
+    """CONTRACT 3.2b: OSM fields on rows (in place) from data/raw/osm_overpass.json.
+
+    Returns (meta additions, stats report). Without the cache the fields stay null and a warning is printed.
+    """
+    payload = osm.load_cached()
+    if payload is None:
+        print("\nWARNING: data/raw/osm_overpass.json missing; OSM fields stay null. "
+              "Run `python -m safelane.osm` (or `python run.py --ingest`) first.")
+        for p in rows:
+            p.update(dict.fromkeys(OSM_FIELDS))
+        return {"osm_fetched_at": None, "attribution": osm.ATTRIBUTION}, None
+    ways = osm.ways_frame(payload)
+    ids = pd.Series([p["osm_id"] for p in rows], index=geometry.index)
+    joined, report = osm.join(geometry, ids, ways)
+    for p, (_, o) in zip(rows, joined.iterrows()):
+        p.update({k: _plain_or_none(o[k]) for k in OSM_FIELDS})
+    osm.print_report(report)
+    return {"osm_fetched_at": osm.osm_timestamp(payload), "attribution": osm.ATTRIBUTION}, report
+
+
 def _print_reports(m, kept, report, n_twins):
     print(f"\n{'layer':<13} {'features':>8} {'matched':>8} {'%':>6}")
     for key, n, matched in report:
@@ -284,6 +314,8 @@ def run(base="road_network"):
     keep = m["n_points"] >= 1
     rows, danger_p95, city_share = to_features(m[keep])
     _print_reports(m, len(rows), report, n_twins)
+    # After the factors, before scoring; the score does not use these fields.
+    osm_meta, osm_report = add_osm(base_gdf.geometry[keep], rows)
 
     overtaking = next(r for r in report if r[0] == "overtaking")
     if base == "road_network" and overtaking[2] < 0.5 * overtaking[1]:
@@ -294,5 +326,6 @@ def run(base="road_network"):
         "n_twins_merged": n_twins,
         "match": {key: {"features": n, "matched": hit, "share": round(hit / n, 4) if n else 0.0}
                   for key, n, hit in report},
+        "osm": osm_report,
     }
-    export.write(base_gdf.geometry[keep], rows, danger_p95, city_share, stats)
+    export.write(base_gdf.geometry[keep], rows, danger_p95, city_share, stats, meta_extra=osm_meta)

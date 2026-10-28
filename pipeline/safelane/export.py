@@ -1,4 +1,4 @@
-"""P1: write data/out/, copy to web/public/data/."""
+"""P1: write data/out/, copy to web/public/data/ (and the PDF report to web/public/)."""
 
 import json
 import shutil
@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "data" / "out"
 WEB_DIR = ROOT / "web" / "public" / "data"
 OUT_FILES = ("segments.geojson", "meta.json")
+OPTIONAL_OUT_FILES = ("counters.geojson",)  # safelane/counters.py; the web app hides the layer without it
+REPORT = "report.pdf"  # safelane/report.py; served at /report.pdf
 COORD_DECIMALS = 5  # ~1 m; keeps segments.geojson under 5 MB
 CONTRACT_VERSION = "1.1"
 VIEW_QUANTILES = (0.02, 0.98)  # meta.bbox: initial map view, ignores far-out rides
@@ -44,7 +46,7 @@ def _view_bbox(wgs):
     return [round(float(v), 5) for v in (mid.x.quantile(lo), mid.y.quantile(lo), mid.x.quantile(hi), mid.y.quantile(hi))]
 
 
-def write(geometry, rows, danger_p95, city_share, stats):
+def write(geometry, rows, danger_p95, city_share, stats, meta_extra=None):
     """Write data/out/segments.geojson (EPSG:4326), meta.json and stats.json; geometry is aligned with rows."""
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     wgs = geometry.to_crs("EPSG:4326")
@@ -70,6 +72,7 @@ def write(geometry, rows, danger_p95, city_share, stats):
         "danger_min_length_m": config.DANGER_MIN_LENGTH_M,
         "default_weights": config.DEFAULT_WEIGHTS,
         "bbox": _view_bbox(wgs),
+        **(meta_extra or {}),
     }
     _write_json(OUT_DIR / "meta.json", meta, indent=2)
 
@@ -97,3 +100,13 @@ def run():
             raise FileNotFoundError(f"{src} missing; run `python run.py --fuse` first")
         shutil.copy2(src, WEB_DIR / name)
         print(f"  copied {name} -> {WEB_DIR}")
+    for name in OPTIONAL_OUT_FILES:
+        if (OUT_DIR / name).exists():
+            shutil.copy2(OUT_DIR / name, WEB_DIR / name)
+            print(f"  copied {name} -> {WEB_DIR}")
+    report = OUT_DIR / REPORT
+    if report.exists():
+        shutil.copy2(report, WEB_DIR.parent / REPORT)
+        print(f"  copied {REPORT} -> {WEB_DIR.parent}")
+    else:
+        print(f"  warning: {report} missing; run `python run.py --report` first")

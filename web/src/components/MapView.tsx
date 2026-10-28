@@ -2,9 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
-import type { SegmentCollection, SegmentFeature } from '@/lib/loadData';
+import type { CounterCollection, CounterProps, SegmentCollection, SegmentFeature } from '@/lib/loadData';
+import type { RankedSegment } from '@/lib/score';
 import type { Meta, SegmentProps } from '@/lib/types';
 import {
+  counterColors,
+  dimmedOpacity,
   lineCasingColor,
   noDataColor,
   scoreBreaks,
@@ -24,27 +27,49 @@ maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs');
 const LINE_WIDTH: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 12, 2, 14, 3, 16, 5];
 const CASING_WIDTH: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 12, 3.5, 14, 4.5, 16, 7];
 
+// Slider weights set feature-state liveScore; before that the published score is used.
+const LIVE_SCORE: maplibregl.ExpressionSpecification = ['coalesce', ['feature-state', 'liveScore'], ['get', 'score']];
+
 // Same bands as the legend: step through scoreBreaks.
 const SCORE_COLOR: maplibregl.ExpressionSpecification = [
   'step',
-  ['coalesce', ['get', 'score'], 0],
+  ['coalesce', LIVE_SCORE, 0],
   scoreColors[0],
   ...scoreBreaks.flatMap((b, i) => [b, scoreColors[i + 1]]),
 ];
 
 const NO_MATCH: maplibregl.FilterSpecification = ['==', ['get', 'id'], ''];
 
+// "Show only infrastructure gaps": non-gap segments fade out (paint only, no data upload).
+const SEGMENT_LAYERS = ['segments-noData', 'segments-casing', 'segments-line'] as const;
+const GAP_OPACITY: maplibregl.ExpressionSpecification = ['case', ['==', ['get', 'infra_gap'], true], 1, dimmedOpacity];
+
 // Higher scores draw on top, so a high-priority street is never hidden under an overlapping line.
+// Layout properties can't read feature-state, so this stays on the published score.
 const SORT_BY_SCORE: maplibregl.DataDrivenPropertyValueSpecification<number> = ['coalesce', ['get', 'score'], -1];
 
+function liveScore(f: maplibregl.MapGeoJSONFeature): number | null {
+  return (f.state?.liveScore as number | undefined) ?? (f.properties.score as number | null);
+}
+
 /** Under the cursor, the line with the highest score wins (matches the draw order). */
-function pickTop(features: maplibregl.MapGeoJSONFeature[]): SegmentProps {
-  const score = (f: maplibregl.MapGeoJSONFeature) => Number(f.properties.score ?? -1);
-  return features.reduce((best, f) => (score(f) > score(best) ? f : best)).properties as SegmentProps;
+function pickTop(features: maplibregl.MapGeoJSONFeature[]): maplibregl.MapGeoJSONFeature {
+  const score = (f: maplibregl.MapGeoJSONFeature) => liveScore(f) ?? -1;
+  return features.reduce((best, f) => (score(f) > score(best) ? f : best));
 }
 
 interface Props {
+  /** Loaded once; weight changes come in through `ranking`, not new features. */
   segments: SegmentFeature[];
+  /** Live scores from rankSegments() for the current weights. */
+  ranking: RankedSegment[];
+  /** Called after a recolour: time spent in setFeatureState, and until the next frame was drawn. */
+  onRecoloured?: (stateMs: number, paintMs: number) => void;
+  /** Fade segments that are not infra_gap (contract 3.2b). */
+  dimNonGaps?: boolean;
+  /** Bike counter points (optional layer) and whether to show them. */
+  counters?: CounterCollection | null;
+  showCounters?: boolean;
   meta: Meta;
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
@@ -54,13 +79,22 @@ function toCollection(segments: SegmentFeature[]): SegmentCollection {
   return { type: 'FeatureCollection', features: segments };
 }
 
-export default function MapView({ segments, meta, selectedId, setSelectedId }: Props) {
+export default function MapView({
+  segments, ranking, onRecoloured, dimNonGaps = false, counters = null, showCounters = false,
+  meta, selectedId, setSelectedId,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const readyRef = useRef(false);
   // Latest props for map callbacks, without re-running the init effect.
   const segmentsRef = useRef(segments);
   segmentsRef.current = segments;
+  const rankingRef = useRef(ranking);
+  rankingRef.current = ranking;
+  const onRecolouredRef = useRef(onRecoloured);
+  onRecolouredRef.current = onRecoloured;
+  const layersRef = useRef({ dimNonGaps, counters, showCounters });
+  layersRef.current = { dimNonGaps, counters, showCounters };
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
 
@@ -82,7 +116,13 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
     map.on('load', () => {
       readyRef.current = true;
 
-      map.addSource('segments', { type: 'geojson', data: toCollection(segmentsRef.current), promoteId: 'id' });
+      map.addSource('segments', {
+        type: 'geojson',
+        data: toCollection(segmentsRef.current),
+        promoteId: 'id',
+        // The segment geometry and the OSM fields come from OpenStreetMap.
+        attribution: meta.attribution ?? copy.osmAttribution,
+      });
 
       // Not enough data: dashed grey.
       map.addLayer({
@@ -138,13 +178,23 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
 
       map.fitBounds(meta.bbox, { padding: 24, duration: 0 });
 
+      applyLiveScores(map, rankingRef.current);
+      applyDim(map, layersRef.current.dimNonGaps);
+      applyCounters(map, layersRef.current.counters, layersRef.current.showCounters);
+
       if (selectedIdRef.current) applySelected(map, selectedIdRef.current, segmentsRef.current);
 
+      // A counter point under the cursor wins over the segments below it.
+      const onCounter = (point: maplibregl.PointLike) =>
+        !!map.getLayer('counters') && map.queryRenderedFeatures(point, { layers: ['counters'] }).length > 0;
+
       map.on('mousemove', 'segments-hit', (e) => {
-        if (!e.features?.length) return;
+        if (!e.features?.length || onCounter(e.point)) return;
         map.getCanvas().style.cursor = 'pointer';
-        const p = pickTop(e.features);
-        const score = p.eligible && p.score != null ? Number(p.score).toFixed(1) : copy.noScore;
+        const top = pickTop(e.features);
+        const p = top.properties as SegmentProps;
+        const s = liveScore(top);
+        const score = p.eligible && s != null ? Number(s).toFixed(1) : copy.noScore;
         // Build the popup with text nodes: street names come from data, never inject them as HTML.
         const content = document.createElement('div');
         const name = document.createElement('strong');
@@ -158,9 +208,31 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
         popup.remove();
       });
 
-      map.on('click', 'segments-hit', (e) => {
+      const showCounterPopup = (e: maplibregl.MapLayerMouseEvent) => {
         if (!e.features?.length) return;
-        setSelectedId(pickTop(e.features).id);
+        map.getCanvas().style.cursor = 'pointer';
+        const p = e.features[0].properties as CounterProps;
+        const content = document.createElement('div');
+        const name = document.createElement('strong');
+        name.textContent = p.name;
+        const bikes = document.createElement('div');
+        bikes.textContent = copy.counters.perDay(new Intl.NumberFormat('en-US').format(p.avg_daily_bikes));
+        const source = document.createElement('div');
+        source.className = 'text-xs text-neutral-600';
+        source.textContent = copy.counters.source;
+        content.append(name, bikes, source);
+        popup.setLngLat(e.lngLat).setDOMContent(content).addTo(map);
+      };
+      map.on('mousemove', 'counters', showCounterPopup);
+      map.on('click', 'counters', showCounterPopup);
+      map.on('mouseleave', 'counters', () => {
+        map.getCanvas().style.cursor = '';
+        popup.remove();
+      });
+
+      map.on('click', 'segments-hit', (e) => {
+        if (!e.features?.length || onCounter(e.point)) return;
+        setSelectedId((pickTop(e.features).properties as SegmentProps).id);
       });
     });
 
@@ -173,11 +245,31 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Push new data (e.g. re-scored by the sliders) into the existing source.
+  // New features (only when the data loads). Weight changes don't come through here.
   useEffect(() => {
     const source = mapRef.current?.getSource('segments') as maplibregl.GeoJSONSource | undefined;
     source?.setData(toCollection(segments));
   }, [segments]);
+
+  // Recolour for new weights via feature-state, without re-uploading the GeoJSON.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    const t0 = performance.now();
+    applyLiveScores(map, ranking);
+    const stateMs = performance.now() - t0;
+    map.once('render', () => onRecolouredRef.current?.(stateMs, performance.now() - t0));
+  }, [ranking]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && readyRef.current) applyDim(map, dimNonGaps);
+  }, [dimNonGaps]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && readyRef.current) applyCounters(map, counters, showCounters);
+  }, [counters, showCounters]);
 
   // Sync selectedId → highlight filter + fly to the street.
   useEffect(() => {
@@ -193,6 +285,36 @@ export default function MapView({ segments, meta, selectedId, setSelectedId }: P
       <div ref={containerRef} className="h-full w-full" />
     </div>
   );
+}
+
+function applyDim(map: maplibregl.Map, dim: boolean): void {
+  for (const id of SEGMENT_LAYERS) map.setPaintProperty(id, 'line-opacity', dim ? GAP_OPACITY : 1);
+}
+
+/** Add the counter source/layer once data is there, then toggle its visibility. */
+function applyCounters(map: maplibregl.Map, counters: CounterCollection | null, show: boolean): void {
+  if (!counters) return;
+  if (!map.getSource('counters')) {
+    map.addSource('counters', { type: 'geojson', data: counters, attribution: copy.counters.attribution });
+    map.addLayer({
+      id: 'counters',
+      type: 'circle',
+      source: 'counters',
+      paint: {
+        'circle-color': counterColors.fill,
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 5, 15, 8],
+        'circle-stroke-color': counterColors.stroke,
+        'circle-stroke-width': 2,
+      },
+    });
+  }
+  map.setLayoutProperty('counters', 'visibility', show ? 'visible' : 'none');
+}
+
+function applyLiveScores(map: maplibregl.Map, ranking: RankedSegment[]): void {
+  for (const r of ranking) {
+    if (r.rank !== null) map.setFeatureState({ source: 'segments', id: r.id }, { liveScore: r.score });
+  }
 }
 
 function applySelected(map: maplibregl.Map, id: string | null, segments: SegmentFeature[]): void {

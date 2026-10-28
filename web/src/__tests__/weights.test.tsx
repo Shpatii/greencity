@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import WeightSliders from '@/components/WeightSliders';
 import { FACTORS, rescore } from '@/lib/score';
 import type { SegmentProps, Weights } from '@/lib/types';
-import { rebalance, sameWeights } from '@/lib/weights';
+import { PRESETS, rebalance, sameWeights } from '@/lib/weights';
 
 const W: Weights = { safety: 0.35, danger: 0.25, surface: 0.15, air: 0.15, flow: 0.1 };
 const sum = (w: Weights) => FACTORS.reduce((s, k) => s + w[k], 0);
@@ -61,5 +61,21 @@ describe('WeightSliders', () => {
     render(<WeightSliders weights={rebalance(W, 'air', 0.5)} defaults={W} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Reset weights' }));
     expect(sameWeights(onChange.mock.calls[0][0], W)).toBe(true);
+  });
+
+  it('applies a preset and marks it active', () => {
+    const onChange = jest.fn();
+    const { rerender } = render(<WeightSliders weights={W} defaults={W} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Comfort' }));
+    expect(onChange).toHaveBeenCalledWith(PRESETS.comfort);
+    rerender(<WeightSliders weights={PRESETS.comfort} defaults={W} onChange={onChange} />);
+    expect(screen.getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Safety first' })).toHaveAttribute('aria-pressed', 'false');
+  });
+});
+
+describe('PRESETS', () => {
+  it.each(Object.entries(PRESETS))('%s sums to 1', (_, w) => {
+    expect(sum(w)).toBeCloseTo(1, 12);
   });
 });

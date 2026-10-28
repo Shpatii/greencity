@@ -6,9 +6,16 @@ interface Props {
   segments: SegmentFeature[];
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
+  /** Show the "Ranking changed" hint (the #1 street just changed). */
+  changed?: boolean;
+  /** Defaults to copy.rankList.title. */
+  title?: string;
+  /** Shown when there is nothing to list; defaults to copy.emptyStates.noEligibleSegments. */
+  emptyText?: string;
 }
 
-export default function RankList({ segments, selectedId, setSelectedId }: Props) {
+export default function RankList({ segments, selectedId, setSelectedId, changed = false, title = copy.rankList.title,
+  emptyText = copy.emptyStates.noEligibleSegments }: Props) {
   const top10 = segments
     .filter((f) => f.properties.eligible && f.properties.rank !== null)
     .sort((a, b) => (a.properties.rank ?? Infinity) - (b.properties.rank ?? Infinity))
@@ -16,8 +23,11 @@ export default function RankList({ segments, selectedId, setSelectedId }: Props)
 
   return (
     <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-      <div className="border-b border-gray-200 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-800">{copy.rankList.title}</h2>
+      <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-3">
+        <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
+        <span aria-live="polite" className="text-xs font-medium text-blue-800">
+          {changed && copy.rankList.changed}
+        </span>
       </div>
 
       <table className="w-full text-sm">
@@ -68,7 +78,7 @@ export default function RankList({ segments, selectedId, setSelectedId }: Props)
         </tbody>
       </table>
       {top10.length === 0 && (
-        <p className="px-4 py-3 text-sm text-gray-600">{copy.emptyStates.noEligibleSegments}</p>
+        <p className="px-4 py-3 text-sm text-gray-600">{emptyText}</p>
       )}
     </section>
   );

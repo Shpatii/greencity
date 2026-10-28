@@ -3,7 +3,7 @@ import type { SegmentFeature } from '@/lib/loadData';
 import type { Meta, Weights } from '@/lib/types';
 import { topReasons } from '@/lib/stats';
 import { copy } from '@/content/copy';
-import { colorForScore } from '@/content/theme';
+import { colorForScore, infraColors } from '@/content/theme';
 
 interface Props {
   segment: SegmentFeature;
@@ -50,6 +50,8 @@ export default function SegmentCard({ segment, meta, weights, onClose }: Props) 
           <span className="text-sm text-gray-600">{copy.cardLabels.score}</span>
         </div>
 
+        <Infrastructure segment={p} />
+
         {/* Stats grid */}
         <dl className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           <Stat label={copy.cardLabels.confidence}>
@@ -80,6 +82,41 @@ export default function SegmentCard({ segment, meta, weights, onClose }: Props) 
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+/** Contract 3.2b: OSM infrastructure and suggested measure; hidden for data without these fields. */
+function Infrastructure({ segment: p }: { segment: SegmentFeature['properties'] }) {
+  const text = copy.cardLabels;
+  const infra = p.infra_class;
+  if (!infra && !p.suggested_measure) return null;
+  return (
+    <div className="mb-4 space-y-2">
+      {infra && (
+        <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <div className="flex items-center gap-2">
+            <dt className="sr-only">{text.infrastructure}</dt>
+            <dd
+              className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+              style={{ backgroundColor: infraColors[infra].bg, color: infraColors[infra].text }}
+            >
+              {copy.infraLabels[infra]}
+            </dd>
+          </div>
+          <div className="flex items-center gap-1">
+            <dt className="text-gray-600">{text.speedLimit}:</dt>
+            <dd className="font-medium tabular-nums text-gray-800">
+              {p.maxspeed_kmh != null ? text.speedKmh(p.maxspeed_kmh) : text.speedUnknown}
+            </dd>
+          </div>
+        </dl>
+      )}
+      {p.suggested_measure && (
+        <p className="rounded-lg border-l-4 border-blue-700 bg-blue-50 px-3 py-2 text-sm text-gray-900">
+          <span className="font-semibold">{text.suggestedMeasure}:</span> {p.suggested_measure}
+        </p>
+      )}
+    </div>
+  );
+}
 
 function Header({ name, onClose }: { name: string; onClose: () => void }) {
   return (

@@ -1,5 +1,6 @@
 export type FactorKey = 'safety' | 'danger' | 'surface' | 'air' | 'flow';
 export type Weights = Record<FactorKey, number>;
+export type InfraClass = 'separated' | 'bike_street' | 'painted_lane' | 'shared_bus' | 'shared' | 'none';
 
 export interface SegmentProps {
   id: string; osm_id: string | null; name: string | null; length_m: number;
@@ -12,6 +13,9 @@ export interface SegmentProps {
   missing: FactorKey[]; confidence: number; eligible: boolean;
   score: number | null; rank: number | null;
   reason_texts: Partial<Record<FactorKey, string>>;
+  // Contract 3.2b (OSM); absent in older data.
+  highway?: string | null; maxspeed_kmh?: number | null; lanes?: number | null;
+  infra_class?: InfraClass | null; infra_gap?: boolean; suggested_measure?: string | null;
 }
 
 export interface Meta {
@@ -19,4 +23,5 @@ export interface Meta {
   n_segments: number; n_eligible: number; min_points: number; confidence_n: number;
   danger_p95: number; city_share_below_150: number; safety_prior_k: number;
   danger_min_length_m: number; default_weights: Weights; bbox: [number, number, number, number];
+  osm_fetched_at?: string | null; attribution?: string;
 }

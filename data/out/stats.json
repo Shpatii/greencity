@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-27T16:17:21+01:00",
+  "generated_at": "2026-10-28T16:11:49+01:00",
   "n_base_edges": 34243,
   "n_twins_merged": 16192,
   "match": {
@@ -34,6 +34,7 @@
       "share": 0.6568
     }
   },
+  "osm": null,
   "n_segments": 6642,
   "n_points": {
     "median": 16.0,

@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from safelane import config
+from safelane import config, osm
 
 FACTORS = ("safety", "danger", "surface", "air", "flow")
 # Raw metric that decides whether a factor has data (CONTRACT.md 3.2 factor rules).
@@ -148,7 +148,11 @@ def run(out_dir=OUT_DIR):
 
     df = pd.DataFrame([f["properties"] for f in features])
     scored = apply_scores(df)
-    for feature, props in zip(features, props_records(scored)):
+    records = props_records(scored)
+    # CONTRACT 3.2b: after scoring (infra_gap needs rank); does not change score or rank.
+    n_gap = osm.add_measures(records)
+    osm.print_top(records)
+    for feature, props in zip(features, records):
         feature["properties"] = props
     write_geojson(seg_path, features)
 
@@ -170,4 +174,4 @@ def run(out_dir=OUT_DIR):
         stats = json.loads(stats_path.read_text(encoding="utf-8"))
         stats.update(score_stats(scored))
         stats_path.write_text(json.dumps(stats, indent=2) + "\n", encoding="utf-8")
-    print(f"score: {len(features)} segments, {n_eligible} eligible -> {seg_path}")
+    print(f"score: {len(features)} segments, {n_eligible} eligible, {n_gap} infra_gap -> {seg_path}")

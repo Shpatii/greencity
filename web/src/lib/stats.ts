@@ -1,5 +1,6 @@
 // City-wide numbers and per-segment reasons derived from segments.geojson.
 import type { SegmentFeature } from './loadData';
+import { contributions } from './score';
 import type { FactorKey, SegmentProps, Weights } from './types';
 
 export interface CityStats {
@@ -39,15 +40,9 @@ export function topSegments(segments: SegmentFeature[], n: number): SegmentFeatu
 
 /** Reason texts sorted by contribution (weight × factor value), largest first. */
 export function topReasons(p: SegmentProps, weights: Weights, n: number): { key: FactorKey; text: string }[] {
-  const value: Record<FactorKey, number> = {
-    safety: p.f_safety,
-    danger: p.f_danger,
-    surface: p.f_surface,
-    air: p.f_air,
-    flow: p.f_flow,
-  };
+  const value = contributions(p, weights);
   return (Object.keys(p.reason_texts) as FactorKey[])
-    .map((key) => ({ key, text: p.reason_texts[key]!, contribution: weights[key] * value[key] }))
+    .map((key) => ({ key, text: p.reason_texts[key]!, contribution: value[key] }))
     .sort((a, b) => b.contribution - a.contribution)
     .slice(0, n)
     .map(({ key, text }) => ({ key, text }));

@@ -1,0 +1,176 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.214546,
+     49.145917
+    ]
+   },
+   "properties": {
+    "id": "100027946",
+    "name": "Route Nord",
+    "avg_daily_bikes": 353,
+    "n_days": 346,
+    "last_date": "2026-10-24",
+    "source": "MobiData BW, Eco-Counter Fahrradzählstellen (eco-counter-fahrradzahler)",
+    "licence": "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.217144,
+     49.127731
+    ]
+   },
+   "properties": {
+    "id": "100027947",
+    "name": "Route Süd",
+    "avg_daily_bikes": 213,
+    "n_days": 345,
+    "last_date": "2026-10-24",
+    "source": "MobiData BW, Eco-Counter Fahrradzählstellen (eco-counter-fahrradzahler)",
+    "licence": "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.2106,
+     49.1469
+    ]
+   },
+   "properties": {
+    "id": "100064303",
+    "name": "Neckarbogen",
+    "avg_daily_bikes": 1026,
+    "n_days": 309,
+    "last_date": "2026-10-24",
+    "source": "MobiData BW, Eco-Counter Fahrradzählstellen (eco-counter-fahrradzahler)",
+    "licence": "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.223623,
+     49.179278
+    ]
+   },
+   "properties": {
+    "id": "300062158",
+    "name": "Heilbronner Straße",
+    "avg_daily_bikes": 153,
+    "n_days": 281,
+    "last_date": "2026-10-24",
+    "source": "MobiData BW, Eco-Counter Fahrradzählstellen (eco-counter-fahrradzahler)",
+    "licence": "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.225915,
+     49.158414
+    ]
+   },
+   "properties": {
+    "id": "300066615",
+    "name": "3 Neckarsulmer str.",
+    "avg_daily_bikes": 348,
+    "n_days": 185,
+    "last_date": "2026-10-24",
+    "source": "MobiData BW, Eco-Counter Fahrradzählstellen (eco-counter-fahrradzahler)",
+    "licence": "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.166608,
+     49.139195
+    ]
+   },
+   "properties": {
+    "id": "300066668",
+    "name": "5 Im Haselter",
+    "avg_daily_bikes": 262,
+    "n_days": 184,
+    "last_date": "2026-10-24",
+    "source": "MobiData BW, Eco-Counter Fahrradzählstellen (eco-counter-fahrradzahler)",
+    "licence": "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.214609,
+     49.139652
+    ]
+   },
+   "properties": {
+    "id": "300066823",
+    "name": "Neckarufer",
+    "avg_daily_bikes": 2089,
+    "n_days": 346,
+    "last_date": "2026-10-24",
+    "source": "MobiData BW, Eco-Counter Fahrradzählstellen (eco-counter-fahrradzahler)",
+    "licence": "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.199811,
+     49.14116
+    ]
+   },
+   "properties": {
+    "id": "300069828",
+    "name": "1 Wilhelm-Leuschner-Straße (CITIX AI) - Hardware - Fuß- und Radverkehr",
+    "avg_daily_bikes": 1578,
+    "n_days": 137,
+    "last_date": "2026-10-24",
+    "source": "MobiData BW, Eco-Counter Fahrradzählstellen (eco-counter-fahrradzahler)",
+    "licence": "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.226183,
+     49.140143
+    ]
+   },
+   "properties": {
+    "id": "300069829",
+    "name": "2 Bismarckstraße - Nur Radverkehr",
+    "avg_daily_bikes": 631,
+    "n_days": 184,
+    "last_date": "2026-10-24",
+    "source": "MobiData BW, Eco-Counter Fahrradzählstellen (eco-counter-fahrradzahler)",
+    "licence": "Datenlizenz Deutschland – Namensnennung – Version 2.0"
+   }
+  }
+ ]
+}

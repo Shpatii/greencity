@@ -17,6 +17,14 @@ import {
 import { copy } from '@/content/copy';
 
 const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+// If the CARTO style can't be fetched, 'load' never fires and the segments never get added.
+// Fall back to a plain background so the data still shows.
+const FALLBACK_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {},
+  layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#f5f5f3' } }],
+};
+const STYLE_TIMEOUT_MS = 8000;
 const CENTER: [number, number] = [9.2109, 49.1427];
 const ZOOM = 13;
 
@@ -112,6 +120,22 @@ export default function MapView({
     mapRef.current = map;
 
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'safelane-popup' });
+
+    // The style request can fail (error event) or just hang (no event at all); handle both.
+    let styleArrived = false;
+    let usedFallback = false;
+    const useFallback = (reason: unknown) => {
+      if (readyRef.current || styleArrived || usedFallback) return;
+      console.warn('Basemap style did not load, using a plain background.', reason);
+      usedFallback = true;
+      map.setStyle(FALLBACK_STYLE);
+    };
+    map.once('styledata', () => { styleArrived = true; });
+    map.on('error', (e) => {
+      // Only the style request itself; a failed tile or sprite is not a reason to drop the basemap.
+      if ((e.error as { url?: string } | undefined)?.url === STYLE_URL) useFallback(e.error);
+    });
+    const styleTimeout = setTimeout(() => useFallback('timeout'), STYLE_TIMEOUT_MS);
 
     map.on('load', () => {
       readyRef.current = true;
@@ -237,6 +261,7 @@ export default function MapView({
     });
 
     return () => {
+      clearTimeout(styleTimeout);
       readyRef.current = false;
       popup.remove();
       map.remove();

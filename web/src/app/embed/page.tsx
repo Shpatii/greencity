@@ -41,7 +41,7 @@ export default function EmbedPage() {
   const fullMapHref = selectedId ? `/map?id=${encodeURIComponent(selectedId)}` : '/map';
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white sm:flex-row">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#0b0b0c] text-neutral-100 sm:flex-row">
       <section className="relative min-h-0 flex-1">
         {meta ? (
           <MapView
@@ -52,15 +52,15 @@ export default function EmbedPage() {
             setSelectedId={setSelectedId}
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-neutral-100 text-sm text-neutral-600">
+          <div className="flex h-full items-center justify-center text-sm text-neutral-400">
             {error ? copy.loadError : copy.loading}
           </div>
         )}
       </section>
 
       {meta && (
-        <aside className="flex max-h-[60%] flex-col gap-3 overflow-y-auto bg-[#f5f5f7] p-3 sm:max-h-none sm:w-[400px] sm:shrink-0">
-          <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5">
+        <aside className="flex max-h-[60%] flex-col gap-3 overflow-y-auto border-white/10 p-3 sm:max-h-none sm:w-[400px] sm:shrink-0 sm:border-l">
+          <div className="rounded-2xl bg-white/[0.04] p-3 ring-1 ring-inset ring-white/[0.08]">
             <Legend />
           </div>
           <RankList
@@ -73,7 +73,7 @@ export default function EmbedPage() {
             href={fullMapHref}
             target="_blank"
             rel="noopener"
-            className="self-end rounded px-1 text-xs font-medium text-blue-800 underline underline-offset-2 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+            className="self-end rounded px-1 text-xs font-medium text-amber-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
           >
             {copy.embed.openFull}
           </a>

@@ -22,17 +22,17 @@ export default function RankList({ segments, selectedId, setSelectedId, changed 
     .slice(0, 10);
 
   return (
-    <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-      <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
-        <span aria-live="polite" className="text-xs font-medium text-blue-800">
+    <section className="overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-inset ring-white/[0.08]">
+      <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-400">{title}</h2>
+        <span aria-live="polite" className="text-xs font-medium text-amber-300">
           {changed && copy.rankList.changed}
         </span>
       </div>
 
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-100 text-xs text-gray-600">
+          <tr className="text-[11px] uppercase tracking-wide text-neutral-500">
             <th className="w-8 px-4 py-2 text-left font-medium">{copy.rankList.colRank}</th>
             <th className="px-2 py-2 text-left font-medium">{copy.rankList.colName}</th>
             <th className="px-2 py-2 text-right font-medium">{copy.rankList.colScore}</th>
@@ -48,28 +48,28 @@ export default function RankList({ segments, selectedId, setSelectedId, changed 
               <tr
                 key={p.id}
                 onClick={() => setSelectedId(p.id)}
-                className={`cursor-pointer border-b border-gray-50 transition-colors last:border-0 hover:bg-neutral-50 ${
-                  isSelected ? 'bg-blue-100' : ''
+                className={`cursor-pointer border-t border-white/[0.06] transition-colors hover:bg-white/[0.06] ${
+                  isSelected ? 'bg-white/10 shadow-[inset_3px_0_0_#22d3ee]' : ''
                 }`}
               >
-                <td className="w-8 px-4 py-2.5 font-mono text-xs text-gray-600">
+                <td className="w-8 px-4 py-2.5 font-mono text-xs text-neutral-500">
                   {p.rank}
                 </td>
-                <td className="max-w-[220px] truncate px-2 py-2.5 text-gray-800">
+                <td className="max-w-[200px] truncate px-2 py-2.5 text-neutral-100">
                   {p.name ?? copy.unnamed}
                 </td>
                 <td className="px-2 py-2.5 text-right">
                   <span className="inline-flex items-center gap-1">
                     <span
-                      className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full ring-1 ring-inset ring-black/40"
-                      style={{ backgroundColor: colorForScore(score) }}
+                      className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
+                      style={{ backgroundColor: colorForScore(score), boxShadow: `0 0 8px ${colorForScore(score)}` }}
                     />
-                    <span className="font-medium tabular-nums text-gray-800">
+                    <span className="font-semibold tabular-nums text-white">
                       {score.toFixed(1)}
                     </span>
                   </span>
                 </td>
-                <td className="px-3 py-2.5 text-right font-mono text-xs text-gray-600">
+                <td className="px-3 py-2.5 text-right font-mono text-xs text-neutral-500">
                   {p.n_points}
                 </td>
               </tr>
@@ -78,7 +78,7 @@ export default function RankList({ segments, selectedId, setSelectedId, changed 
         </tbody>
       </table>
       {top10.length === 0 && (
-        <p className="px-4 py-3 text-sm text-gray-600">{emptyText}</p>
+        <p className="px-4 py-3 text-sm text-neutral-400">{emptyText}</p>
       )}
     </section>
   );

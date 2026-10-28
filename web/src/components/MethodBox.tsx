@@ -29,18 +29,18 @@ export default function MethodBox({ weights, meta, showCountersSource = false }:
   const text = copy.methodBox;
 
   return (
-    <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+    <section className="overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-inset ring-white/[0.08]">
       <button
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-11 w-full items-center gap-2 rounded px-3 text-left text-sm font-semibold text-neutral-900 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+        className="flex min-h-11 w-full items-center gap-2 rounded px-4 text-left text-sm font-semibold text-neutral-100 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
       >
         <svg
           aria-hidden="true"
           viewBox="0 0 16 16"
-          className={`h-4 w-4 shrink-0 text-neutral-700 transition-transform motion-reduce:transition-none ${open ? 'rotate-90' : ''}`}
+          className={`h-4 w-4 shrink-0 text-neutral-400 transition-transform motion-reduce:transition-none ${open ? 'rotate-90' : ''}`}
         >
           <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -52,12 +52,12 @@ export default function MethodBox({ weights, meta, showCountersSource = false }:
         role="region"
         aria-label={text.title}
         hidden={!open}
-        className="space-y-3 border-t border-neutral-200 px-3 py-3 text-sm text-neutral-800"
+        className="space-y-3 border-t border-white/[0.08] px-4 py-3 text-sm text-neutral-300"
       >
         <p>{text.explanation}</p>
 
         <table className="w-full text-left">
-          <caption className="mb-1 text-left text-xs font-semibold uppercase tracking-wide text-neutral-700">
+          <caption className="mb-1 text-left text-xs font-semibold uppercase tracking-wider text-neutral-400">
             {text.weightsCaption}
           </caption>
           <thead className="sr-only">
@@ -68,7 +68,7 @@ export default function MethodBox({ weights, meta, showCountersSource = false }:
           </thead>
           <tbody>
             {FACTORS.map((key) => (
-              <tr key={key} className="border-b border-neutral-100 last:border-0">
+              <tr key={key} className="border-b border-white/[0.06] last:border-0">
                 <th scope="row" className="py-1 font-normal">
                   {copy.factorLabels[key]}
                 </th>
@@ -79,7 +79,7 @@ export default function MethodBox({ weights, meta, showCountersSource = false }:
         </table>
 
         <div>
-          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-700">{text.limitsTitle}</h3>
+          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-400">{text.limitsTitle}</h3>
           <ul className="list-disc space-y-1 pl-5">
             {text.limits.map((limit) => (
               <li key={limit}>{limit}</li>
@@ -87,8 +87,8 @@ export default function MethodBox({ weights, meta, showCountersSource = false }:
           </ul>
         </div>
 
-        <p className="text-xs text-neutral-700">{text.dataSource(formatGeneratedAt(meta.generated_at))}</p>
-        {showCountersSource && <p className="text-xs text-neutral-700">{text.countersSource}</p>}
+        <p className="text-xs text-neutral-500">{text.dataSource(formatGeneratedAt(meta.generated_at))}</p>
+        {showCountersSource && <p className="text-xs text-neutral-500">{text.countersSource}</p>}
       </div>
     </section>
   );

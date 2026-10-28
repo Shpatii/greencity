@@ -16,13 +16,13 @@ import {
 } from '@/content/theme';
 import { copy } from '@/content/copy';
 
-const STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+const STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 // If the CARTO style can't be fetched, 'load' never fires and the segments never get added.
 // Fall back to a plain background so the data still shows.
 const FALLBACK_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {},
-  layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#f5f5f3' } }],
+  layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#0b0b0c' } }],
 };
 const STYLE_TIMEOUT_MS = 8000;
 const CENTER: [number, number] = [9.2109, 49.1427];
@@ -50,7 +50,16 @@ const NO_MATCH: maplibregl.FilterSpecification = ['==', ['get', 'id'], ''];
 
 // "Show only infrastructure gaps": non-gap segments fade out (paint only, no data upload).
 const SEGMENT_LAYERS = ['segments-noData', 'segments-casing', 'segments-line'] as const;
-const GAP_OPACITY: maplibregl.ExpressionSpecification = ['case', ['==', ['get', 'infra_gap'], true], 1, dimmedOpacity];
+const IS_GAP: maplibregl.ExpressionSpecification = ['==', ['get', 'infra_gap'], true];
+const GAP_OPACITY: maplibregl.ExpressionSpecification = ['case', IS_GAP, 1, dimmedOpacity];
+
+// Soft glow under high and very high priority streets (live score, so it follows the sliders).
+const GLOW_FROM = scoreBreaks[2];
+const GLOW_OPACITY: maplibregl.ExpressionSpecification = ['case', ['>=', ['coalesce', LIVE_SCORE, 0], GLOW_FROM], 0.45, 0];
+const GLOW_OPACITY_GAPS: maplibregl.ExpressionSpecification = [
+  'case', ['all', IS_GAP, ['>=', ['coalesce', LIVE_SCORE, 0], GLOW_FROM]], 0.45, 0,
+];
+const GLOW_WIDTH: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 12, 6, 14, 10, 16, 16];
 
 // Higher scores draw on top, so a high-priority street is never hidden under an overlapping line.
 // Layout properties can't read feature-state, so this stays on the published score.
@@ -81,6 +90,8 @@ interface Props {
   meta: Meta;
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
+  /** Space covered by floating panels, so fitting and flying keep the streets in view. */
+  inset?: maplibregl.PaddingOptions;
 }
 
 function toCollection(segments: SegmentFeature[]): SegmentCollection {
@@ -89,7 +100,7 @@ function toCollection(segments: SegmentFeature[]): SegmentCollection {
 
 export default function MapView({
   segments, ranking, onRecoloured, dimNonGaps = false, counters = null, showCounters = false,
-  meta, selectedId, setSelectedId,
+  meta, selectedId, setSelectedId, inset,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -115,8 +126,10 @@ export default function MapView({
       style: STYLE_URL,
       center: CENTER,
       zoom: ZOOM,
+      attributionControl: { compact: true },
     });
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    if (inset) map.setPadding(inset);
+    map.addControl(new maplibregl.NavigationControl(), 'top-left');
     mapRef.current = map;
 
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'safelane-popup' });
@@ -124,7 +137,7 @@ export default function MapView({
     // The style request can fail (error event) or just hang (no event at all); handle both.
     let styleArrived = false;
     let usedFallback = false;
-    const useFallback = (reason: unknown) => {
+    const switchToFallback = (reason: unknown) => {
       if (readyRef.current || styleArrived || usedFallback) return;
       console.warn('Basemap style did not load, using a plain background.', reason);
       usedFallback = true;
@@ -133,9 +146,9 @@ export default function MapView({
     map.once('styledata', () => { styleArrived = true; });
     map.on('error', (e) => {
       // Only the style request itself; a failed tile or sprite is not a reason to drop the basemap.
-      if ((e.error as { url?: string } | undefined)?.url === STYLE_URL) useFallback(e.error);
+      if ((e.error as { url?: string } | undefined)?.url === STYLE_URL) switchToFallback(e.error);
     });
-    const styleTimeout = setTimeout(() => useFallback('timeout'), STYLE_TIMEOUT_MS);
+    const styleTimeout = setTimeout(() => switchToFallback('timeout'), STYLE_TIMEOUT_MS);
 
     map.on('load', () => {
       readyRef.current = true;
@@ -155,6 +168,15 @@ export default function MapView({
         source: 'segments',
         filter: ['!', ['get', 'eligible']],
         paint: { 'line-color': noDataColor, 'line-width': 2, 'line-dasharray': [2, 2] },
+      });
+
+      map.addLayer({
+        id: 'segments-glow',
+        type: 'line',
+        source: 'segments',
+        filter: ['get', 'eligible'],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': SCORE_COLOR, 'line-width': GLOW_WIDTH, 'line-blur': 6, 'line-opacity': GLOW_OPACITY },
       });
 
       // Eligible: dark casing, then the band colour on top.
@@ -200,7 +222,7 @@ export default function MapView({
         paint: { 'line-width': 12, 'line-opacity': 0 },
       });
 
-      map.fitBounds(meta.bbox, { padding: 24, duration: 0 });
+      map.fitBounds(meta.bbox, { padding: 16, duration: 0 });
 
       applyLiveScores(map, rankingRef.current);
       applyDim(map, layersRef.current.dimNonGaps);
@@ -242,7 +264,7 @@ export default function MapView({
         const bikes = document.createElement('div');
         bikes.textContent = copy.counters.perDay(new Intl.NumberFormat('en-US').format(p.avg_daily_bikes));
         const source = document.createElement('div');
-        source.className = 'text-xs text-neutral-600';
+        source.className = 'text-xs text-neutral-400';
         source.textContent = copy.counters.source;
         content.append(name, bikes, source);
         popup.setLngLat(e.lngLat).setDOMContent(content).addTo(map);
@@ -314,6 +336,7 @@ export default function MapView({
 
 function applyDim(map: maplibregl.Map, dim: boolean): void {
   for (const id of SEGMENT_LAYERS) map.setPaintProperty(id, 'line-opacity', dim ? GAP_OPACITY : 1);
+  map.setPaintProperty('segments-glow', 'line-opacity', dim ? GLOW_OPACITY_GAPS : GLOW_OPACITY);
 }
 
 /** Add the counter source/layer once data is there, then toggle its visibility. */

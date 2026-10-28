@@ -38,6 +38,12 @@ export default function MapPage() {
   const [counters, setCounters] = useState<CounterCollection | null>(null);
   const [showCounters, setShowCounters] = useState(false);
   const recomputeMsRef = useRef(0);
+  // From md up the panel and legend float over the map; keep the streets out from under them.
+  const [inset] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+      ? { top: 60, right: 444, bottom: 16, left: 16 }
+      : undefined,
+  );
 
   useEffect(() => {
     // Landing page links here with ?id=seg_… to open one street.
@@ -114,11 +120,14 @@ export default function MapPage() {
     [segments.length],
   );
 
+  const panel = 'rounded-2xl bg-white/[0.04] p-4 ring-1 ring-inset ring-white/[0.08]';
+  const fmt = (n: number) => new Intl.NumberFormat('en-US').format(n);
+
   return (
-    <div className="flex min-h-screen flex-col md:h-screen">
-      <SiteNav />
-      <main className="flex flex-1 flex-col md:min-h-0 md:flex-row">
-        <section className="relative h-[60vh] w-full shrink-0 md:h-full md:flex-1">
+    <div className="min-h-screen bg-[#0b0b0c] text-neutral-100 md:h-screen md:overflow-hidden">
+      <SiteNav overlay />
+      <main className="md:relative md:h-full">
+        <section className="map-shell relative mt-12 h-[62vh] w-full md:absolute md:inset-0 md:mt-0 md:h-full">
           {meta ? (
             <MapView
               segments={segments}
@@ -130,56 +139,56 @@ export default function MapPage() {
               meta={meta}
               selectedId={selectedId}
               setSelectedId={setSelectedId}
+              inset={inset}
             />
           ) : (
-            <div className="flex h-full items-center justify-center bg-neutral-100 text-sm text-neutral-600">
+            <div className="flex h-full items-center justify-center text-sm text-neutral-400">
               {error ? copy.loadError : copy.loading}
+            </div>
+          )}
+          {meta && (
+            <div className="pointer-events-auto absolute bottom-4 left-4 z-10 hidden w-[360px] rounded-2xl bg-black/60 p-4 shadow-2xl ring-1 ring-inset ring-white/10 backdrop-blur-xl md:block">
+              <Legend />
             </div>
           )}
         </section>
 
-        <aside className="flex w-full flex-col bg-[#f5f5f7] md:h-full md:w-[440px] md:shrink-0 md:overflow-y-auto">
-          <header className="px-5 pb-2 pt-6">
-            <h1 className="text-2xl font-semibold tracking-tight">{copy.legend.title}</h1>
-            <p className="mt-1 text-sm text-neutral-600">{copy.tagline}</p>
+        <aside className="flex w-full flex-col md:absolute md:bottom-3 md:right-3 md:top-[60px] md:z-10 md:w-[420px] md:overflow-y-auto md:rounded-3xl md:bg-black/60 md:shadow-2xl md:ring-1 md:ring-inset md:ring-white/10 md:backdrop-blur-2xl md:backdrop-saturate-150 [scrollbar-color:rgba(255,255,255,0.15)_transparent] [scrollbar-width:thin]">
+          <header className="px-5 pb-1 pt-6">
+            <p className="text-xs font-medium tracking-wide text-amber-300">{copy.landing.eyebrow}</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white">{copy.legend.title}</h1>
+            <p className="mt-1.5 text-sm leading-snug text-neutral-400">{copy.tagline}</p>
+            {meta && (
+              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-400">
+                <span>
+                  <span className="font-semibold tabular-nums text-white">{fmt(meta.n_segments)}</span> {copy.mapStats.segments}
+                </span>
+                <span>
+                  <span className="font-semibold tabular-nums text-white">{fmt(meta.n_eligible)}</span> {copy.mapStats.scored}
+                </span>
+              </p>
+            )}
           </header>
 
           {meta && weights && (
-            <div className="flex flex-col gap-4 p-5 pt-3">
-              <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+            <div className="flex flex-col gap-3 p-4 pt-3">
+              <div className={`${panel} md:hidden`}>
                 <Legend />
               </div>
               {selectedSegment && (
                 <SegmentCard segment={selectedSegment} meta={meta} weights={appliedWeights ?? weights} onClose={() => setSelectedId(null)} />
               )}
               {(hasGapField || counters) && (
-                <fieldset className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+                <fieldset className={panel}>
                   <legend className="sr-only">{copy.layers.title}</legend>
-                  <p aria-hidden="true" className="mb-2 text-sm font-semibold text-neutral-900">{copy.layers.title}</p>
+                  <p aria-hidden="true" className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-400">{copy.layers.title}</p>
                   {hasGapField && (
-                    <label className="flex cursor-pointer items-start gap-2 text-sm text-neutral-800">
-                      <input
-                        type="checkbox"
-                        checked={gapsOnly}
-                        onChange={(e) => setGapsOnly(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 accent-blue-700"
-                      />
-                      <span>
-                        {copy.layers.gapsOnly}
-                        <span className="block text-xs text-neutral-600">{copy.layers.gapsHint}</span>
-                      </span>
-                    </label>
+                    <Toggle checked={gapsOnly} onChange={setGapsOnly} label={copy.layers.gapsOnly} hint={copy.layers.gapsHint} />
                   )}
                   {counters && (
-                    <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-neutral-800">
-                      <input
-                        type="checkbox"
-                        checked={showCounters}
-                        onChange={(e) => setShowCounters(e.target.checked)}
-                        className="h-4 w-4 accent-blue-700"
-                      />
-                      {copy.layers.counters}
-                    </label>
+                    <div className={hasGapField ? 'mt-3' : ''}>
+                      <Toggle checked={showCounters} onChange={setShowCounters} label={copy.layers.counters} />
+                    </div>
                   )}
                 </fieldset>
               )}
@@ -190,11 +199,11 @@ export default function MapPage() {
                 changed={rankChanged}
                 emptyText={gapFilter ? copy.rankList.noGaps : undefined}
               />
-              <div className="-mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
                 <button
                   type="button"
                   onClick={() => exportTopN(segments, weights, meta)}
-                  className="rounded-full bg-white px-3 py-1.5 font-medium text-blue-800 shadow-sm ring-1 ring-inset ring-blue-200 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+                  className="rounded-full bg-white px-3.5 py-1.5 font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                 >
                   {copy.downloads.csv}
                 </button>
@@ -203,13 +212,13 @@ export default function MapPage() {
                   target="_blank"
                   rel="noopener"
                   title={copy.downloads.pdfHint}
-                  className="rounded font-medium text-blue-800 underline underline-offset-2 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+                  className="rounded font-medium text-amber-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                 >
                   {copy.downloads.pdf}
                 </a>
               </div>
               {!selectedSegment && (
-                <p className="rounded-2xl border border-dashed border-neutral-300 p-4 text-sm text-neutral-600">
+                <p className="rounded-2xl border border-dashed border-white/15 p-4 text-sm text-neutral-400">
                   {copy.emptyStates.noSegmentSelected}
                 </p>
               )}
@@ -220,5 +229,24 @@ export default function MapPage() {
         </aside>
       </main>
     </div>
+  );
+}
+
+/** Switch-style checkbox for the map layer options. */
+function Toggle({ checked, onChange, label, hint }: {
+  checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start justify-between gap-3 text-sm text-neutral-100">
+      <span>
+        {label}
+        {hint && <span className="mt-0.5 block text-xs leading-snug text-neutral-400">{hint}</span>}
+      </span>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+      <span
+        aria-hidden="true"
+        className="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-white/15 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:bg-amber-400 peer-checked:after:translate-x-4 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-300 motion-reduce:transition-none motion-reduce:after:transition-none"
+      />
+    </label>
   );
 }

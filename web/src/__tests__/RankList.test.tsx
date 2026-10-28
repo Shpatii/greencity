@@ -103,7 +103,7 @@ describe('RankList', () => {
     const { container } = render(
       <RankList segments={[seg]} selectedId="seg_sel" setSelectedId={jest.fn()} />,
     );
-    const row = container.querySelector('tr.bg-blue-100');
+    const row = container.querySelector('tr.bg-white\\/10');
     expect(row).not.toBeNull();
   });
 

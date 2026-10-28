@@ -87,6 +87,11 @@ export interface Copy {
     gapsHint: string;
     counters: string;
   };
+  /** Small figures under the map panel title. */
+  mapStats: {
+    segments: string;
+    scored: string;
+  };
   counters: {
     /** Map attribution while the counter layer is shown. */
     attribution: string;
@@ -258,6 +263,10 @@ export const copy: Copy = {
     gapsOnly: 'Show only infrastructure gaps',
     gapsHint: 'Top 25% streets (default weights) with no, shared or only painted bike lanes.',
     counters: 'Bike counters',
+  },
+  mapStats: {
+    segments: 'street sections',
+    scored: 'with a score',
   },
   counters: {
     attribution: 'Bike counters: MobiData BW, DL-DE-BY-2.0',

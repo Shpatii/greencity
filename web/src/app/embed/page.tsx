@@ -9,6 +9,7 @@ import type { Meta } from '@/lib/types';
 import { copy } from '@/content/copy';
 import RankList from '@/components/RankList';
 import Legend from '@/components/Legend';
+import LegalLinks from '@/components/LegalLinks';
 
 // maplibre-gl touches window, so keep it out of the server render.
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
@@ -77,6 +78,7 @@ export default function EmbedPage() {
           >
             {copy.embed.openFull}
           </a>
+          <LegalLinks external className="self-end px-1 text-xs text-neutral-600" />
         </aside>
       )}
     </div>

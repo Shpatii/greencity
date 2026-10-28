@@ -1,4 +1,4 @@
-"""P3: how much data do segments have? Helps pick min_points and confidence_n.
+"""How much data do segments have? Helps pick min_points and confidence_n.
 
     python -m safelane.coverage PATH
 

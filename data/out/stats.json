@@ -1,73 +1,102 @@
 {
-  "generated_at": "2026-10-28T16:11:49+01:00",
+  "generated_at": "2026-10-28T18:58:02+01:00",
   "n_base_edges": 34243,
   "n_twins_merged": 16192,
   "match": {
     "overtaking": {
-      "features": 1388,
-      "matched": 1388,
+      "features": 1389,
+      "matched": 1389,
       "share": 1.0
     },
     "roughness": {
-      "features": 9599,
-      "matched": 9599,
+      "features": 9600,
+      "matched": 9600,
       "share": 1.0
     },
     "traffic_flow": {
-      "features": 7153,
-      "matched": 7153,
+      "features": 7155,
+      "matched": 7155,
       "share": 1.0
     },
     "speed": {
-      "features": 7384,
-      "matched": 7384,
+      "features": 7386,
+      "matched": 7386,
       "share": 1.0
     },
     "danger": {
-      "features": 7095,
-      "matched": 5192,
-      "share": 0.7318
+      "features": 7741,
+      "matched": 5198,
+      "share": 0.6715
     },
     "danger_pm": {
-      "features": 183030,
-      "matched": 120210,
+      "features": 183058,
+      "matched": 120237,
       "share": 0.6568
     }
   },
-  "osm": null,
-  "n_segments": 6642,
+  "osm": {
+    "segments": 6638,
+    "by_id": 6633,
+    "by_distance": 4,
+    "unmatched": 1,
+    "infra_class": {
+      "none": 5984,
+      "shared": 77,
+      "shared_bus": 19,
+      "painted_lane": 337,
+      "bike_street": 111,
+      "separated": 109
+    }
+  },
+  "car_free_dropped": {
+    "overtaking": {
+      "lines": 376,
+      "overtakes": 1473
+    },
+    "danger": {
+      "points": 1490
+    }
+  },
+  "passes_counted": 23,
+  "passes_excluded": {
+    "few_overtakes": 549,
+    "car_free": 1173,
+    "stationary": 90,
+    "short": 106
+  },
+  "n_segments": 6638,
   "n_points": {
     "median": 16.0,
-    "ge_1": 6642,
-    "ge_5": 5106,
-    "ge_10": 4100,
-    "ge_30": 2388
+    "ge_1": 6638,
+    "ge_5": 5109,
+    "ge_10": 4102,
+    "ge_30": 2391
   },
-  "n_with_overtakes": 863,
-  "danger_p95": 17.879,
-  "city_share_below_150": 0.807,
-  "n_eligible": 5106,
+  "n_with_overtakes": 602,
+  "danger_p95": 39.607,
+  "city_share_below_150": 0.7712,
+  "n_eligible": 5109,
   "score": {
-    "max": 76.1,
-    "median": 9.8,
+    "max": 68.0,
+    "median": 8.9,
     "bands": {
-      "0-20": 4313,
-      "20-40": 210,
-      "40-60": 497,
-      "60-80": 86,
+      "0-20": 5077,
+      "20-40": 22,
+      "40-60": 8,
+      "60-80": 2,
       "80-100": 0
     }
   },
   "top10": [
-    "seg_032464",
-    "seg_028814",
-    "seg_011483",
-    "seg_001923",
-    "seg_021301",
-    "seg_003068",
-    "seg_028813",
-    "seg_011992",
-    "seg_033606",
-    "seg_012747"
+    "seg_014376",
+    "seg_027866",
+    "seg_019379",
+    "seg_027865",
+    "seg_000433",
+    "seg_000150",
+    "seg_009789",
+    "seg_006040",
+    "seg_006997",
+    "seg_015379"
   ]
 }

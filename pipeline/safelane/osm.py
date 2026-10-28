@@ -1,4 +1,4 @@
-"""P1: OpenStreetMap street and bike-infrastructure tags per segment (CONTRACT.md 3.2b).
+"""OpenStreetMap street and bike-infrastructure tags per segment (CONTRACT.md 3.2b).
 
     python -m safelane.osm [--refresh]    # fetch data/raw/osm_overpass.json (prints the query)
 
@@ -23,7 +23,6 @@ from safelane import config
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 CACHE = RAW_DIR / "osm_overpass.json"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
-USER_AGENT = "safelane-hn-hackathon"
 TIMEOUT_S = 180
 RETRIES = 2
 BUFFER_M = 200
@@ -42,6 +41,10 @@ NEAREST_M = 10  # fallback join: segment midpoint -> nearest way
 SEPARATE_M = 15  # cycleway*=separate needs a highway=cycleway this close ...
 SEPARATE_MAX_ANGLE = 30  # ... and this parallel (degrees)
 BEARING_HALF_M = 10  # local direction: points this far either side along the line
+
+class OverpassError(RuntimeError):
+    """Overpass gave no usable response and there is nothing cached to fall back on."""
+
 
 # Implicit German limits; Fahrradstraße and Spielstraße added beyond the brief (same meaning in law).
 MAXSPEED_ZONES = {
@@ -69,7 +72,7 @@ def buffered_bbox(bounds, buffer_m=BUFFER_M):
 
 def _session():
     s = requests.Session()
-    s.headers["User-Agent"] = USER_AGENT
+    s.headers["User-Agent"] = config.USER_AGENT
     retry = Retry(total=RETRIES, backoff_factor=5, status_forcelist=(429, 500, 502, 503, 504),
                   allowed_methods=("POST",))
     s.mount("https://", HTTPAdapter(max_retries=retry))
@@ -88,6 +91,10 @@ def fetch(bounds, refresh=False):
     r = _session().post(OVERPASS_URL, data={"data": q}, timeout=(10, TIMEOUT_S + 30))
     r.raise_for_status()
     payload = r.json()
+    # Overpass reports query timeouts as HTTP 200 with a remark and no (or partial) elements.
+    remark = payload.get("remark") or ""
+    if "error" in remark.lower() or not payload.get("elements"):
+        raise OverpassError(f"no usable data from Overpass: {remark or 'no elements'}")
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     tmp = CACHE.with_suffix(".json.part")
     tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
@@ -353,16 +360,24 @@ def osm_timestamp(payload):
     return (payload or {}).get("osm3s", {}).get("timestamp_osm_base")
 
 
-def run(refresh=False):
-    """Fetch (or reuse) the cache for the road network extent."""
+def run(refresh=False, allow_missing=False):
+    """Fetch (or reuse) the cache for the road network extent.
+
+    A failed request falls back to the existing cache. Without a cache it raises, unless
+    allow_missing (offline development): then fuse publishes the OSM fields as null.
+    """
     print("osm")
     road = gpd.read_file(RAW_DIR / f"{config.COLLECTIONS['road_network']}.geojson")
     # The full network extent, not meta.bbox (that is the 2-98% view, CONTRACT 3.3).
     try:
         fetch(tuple(road.to_crs("EPSG:4326").total_bounds), refresh=refresh)
-    except requests.RequestException as e:
-        # Keep the rest of the pipeline usable offline; fuse warns that the OSM fields are null.
-        print(f"  WARNING: Overpass request failed ({e}); OSM fields will be null")
+    except (requests.RequestException, OverpassError) as e:
+        if CACHE.exists():
+            print(f"  WARNING: Overpass request failed ({e}); reusing cached {CACHE.name}")
+        elif allow_missing:
+            print(f"  WARNING: Overpass request failed ({e}); OSM fields will be null")
+        else:
+            raise OverpassError(f"Overpass request failed and there is no cached {CACHE.name}: {e}") from e
 
 
 if __name__ == "__main__":

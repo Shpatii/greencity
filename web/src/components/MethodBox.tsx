@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import { copy } from '@/content/copy';
+import { formatDataDate } from '@/lib/format';
 import type { FactorKey, Meta, Weights } from '@/lib/types';
 
 const FACTORS: FactorKey[] = ['safety', 'danger', 'surface', 'air', 'flow'];
@@ -13,15 +14,6 @@ interface Props {
   showCountersSource?: boolean;
 }
 
-function formatGeneratedAt(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat('en-GB', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'Europe/Berlin',
-  }).format(date);
-}
 
 export default function MethodBox({ weights, meta, showCountersSource = false }: Props) {
   const [open, setOpen] = useState(false);
@@ -87,7 +79,7 @@ export default function MethodBox({ weights, meta, showCountersSource = false }:
           </ul>
         </div>
 
-        <p className="text-xs text-neutral-700">{text.dataSource(formatGeneratedAt(meta.generated_at))}</p>
+        <p className="text-xs text-neutral-700">{text.dataSource(formatDataDate(meta.generated_at, true))}</p>
         {showCountersSource && <p className="text-xs text-neutral-700">{text.countersSource}</p>}
       </div>
     </section>

@@ -2,6 +2,11 @@
   "name": "safelane-hn-qa",
   "private": true,
   "type": "module",
-  "scripts": { "e2e": "node e2e.mjs" },
-  "devDependencies": { "playwright": "1.56.1" }
+  "scripts": {
+    "e2e": "node e2e.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "playwright": "1.56.1"
+  }
 }

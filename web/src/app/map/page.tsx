@@ -6,6 +6,7 @@ import { loadCounters, loadData, type CounterCollection, type SegmentFeature } f
 import type { Meta, Weights } from '@/lib/types';
 import { rankSegments, type RankedSegment } from '@/lib/score';
 import { exportTopN } from '@/lib/exportCsv';
+import { formatDataDate } from '@/lib/format';
 import { copy } from '@/content/copy';
 import SiteNav from '@/components/SiteNav';
 import RankList from '@/components/RankList';
@@ -13,6 +14,7 @@ import SegmentCard from '@/components/SegmentCard';
 import WeightSliders from '@/components/WeightSliders';
 import MethodBox from '@/components/MethodBox';
 import Legend from '@/components/Legend';
+import LegalLinks from '@/components/LegalLinks';
 
 // maplibre-gl touches window, so keep it out of the server render.
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
@@ -142,6 +144,7 @@ export default function MapPage() {
           <header className="px-5 pb-2 pt-6">
             <h1 className="text-2xl font-semibold tracking-tight">{copy.legend.title}</h1>
             <p className="mt-1 text-sm text-neutral-600">{copy.tagline}</p>
+            {meta && <p className="mt-1 text-xs text-neutral-600">{copy.dataAsOf(formatDataDate(meta.generated_at))}</p>}
           </header>
 
           {meta && weights && (
@@ -215,6 +218,7 @@ export default function MapPage() {
               )}
               <WeightSliders weights={weights} defaults={meta.default_weights} onChange={setWeights} />
               <MethodBox weights={weights} meta={meta} showCountersSource={!!counters && showCounters} />
+              <LegalLinks className="px-1 text-xs text-neutral-600" />
             </div>
           )}
         </aside>

@@ -1,6 +1,5 @@
-// P4: all user-facing text.
-// TODO(de): add German copy as `copyDe: Copy` and pick by locale.
-import type { FactorKey, InfraClass } from '@/lib/types';
+// All user-facing text.
+import type { FactorKey, InfraClass, PassesExcluded } from '@/lib/types';
 import type { PresetKey } from '@/lib/weights';
 
 type FiveBands<T> = readonly [T, T, T, T, T];
@@ -10,6 +9,8 @@ export interface Copy {
   tagline: string;
   loading: string;
   loadError: string;
+  /** Freshness line under the map sidebar title. */
+  dataAsOf: (date: string) => string;
   unnamed: string;
   noScore: string;
   close: string;
@@ -80,6 +81,8 @@ export interface Copy {
   };
   /** © line for the segment data on the map (meta.attribution wins when present). */
   osmAttribution: string;
+  /** © line for the self-hosted base map (HTML). */
+  basemapAttribution: string;
   infraLabels: Record<InfraClass, string>;
   layers: {
     title: string;
@@ -104,6 +107,8 @@ export interface Copy {
     overtakes: string;
     confidence: string;
     topReasons: string;
+    /** Why close passes and danger points do not count on this section (contract 1.2 passes_excluded). */
+    passesExcluded: Record<PassesExcluded, string>;
   };
   nav: {
     overview: string;
@@ -143,6 +148,7 @@ export const copy: Copy = {
   tagline: 'Bike sensor rides show where Heilbronn should act first',
   loading: 'Loading data…',
   loadError: 'Could not load the map data.',
+  dataAsOf: (date) => `Data as of ${date}`,
   unnamed: 'Unnamed street',
   noScore: 'n/a',
   close: '×',
@@ -194,7 +200,7 @@ export const copy: Copy = {
     toggle: 'How we score',
     explanation:
       'Local riders cycled Heilbronn with senseBox:bike sensors. For each street section we look at five things: ' +
-      'close passes by cars, risky near misses, bumpy surface, fine dust and stop-and-go traffic. Each is compared ' +
+      'how close cars passed, risky near misses, bumpy surface, fine dust and stop-and-go traffic. Each is compared ' +
       'with the rest of the city, weighted by the sliders and added up to a score from 0 to 100. ' +
       'Higher means: look at this street first.',
     weightsCaption: 'Current weights',
@@ -205,6 +211,9 @@ export const copy: Copy = {
       'Riders chose their own routes, so popular streets have more data. A street with no data is not safe, just unmeasured.',
       'Passing cars are detected by AI. It misses some and miscounts others, so a single value can be off.',
       'Some streets have only a few measurements. Their scores are less certain, so check the confidence on each card.',
+      'Close passes and near misses only count where a car can overtake a moving cyclist and at least 20 passes were ' +
+        'recorded on 25 m or more of street. Paths, pedestrian zones, spots where riders stood still and thin samples ' +
+        'are scored on surface, fine dust and stop-and-go only.',
     ],
     dataSource: (generatedAt) => `Data: ATRAI senseBox:bike, generated ${generatedAt}`,
     countersSource: 'Bike counters: MobiData BW, Eco-Counter Fahrradzählstellen, Datenlizenz Deutschland – Namensnennung – Version 2.0.',
@@ -245,6 +254,8 @@ export const copy: Copy = {
   },
 
   osmAttribution: '© OpenStreetMap contributors',
+  basemapAttribution:
+    '<a href="https://protomaps.com">Protomaps</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   infraLabels: {
     separated: 'Separated',
     bike_street: 'Bike street',
@@ -276,6 +287,12 @@ export const copy: Copy = {
     overtakes: 'Overtakes',
     confidence: 'Confidence',
     topReasons: 'Top reasons',
+    passesExcluded: {
+      car_free: 'Car-free path or pedestrian zone: passes by cars on a nearby road are not counted here.',
+      stationary: 'Close passes not counted: riders were mostly standing here (traffic lights, parked bikes).',
+      short: 'Close passes not counted: this section is too short to place a pass on it reliably.',
+      few_overtakes: 'Close passes not counted: too few overtakes were recorded here to rank on them.',
+    },
   },
 
   nav: {

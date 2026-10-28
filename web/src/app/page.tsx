@@ -4,22 +4,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { loadData, type SegmentFeature } from '@/lib/loadData';
 import type { FactorKey, Meta } from '@/lib/types';
+import { formatDataDate } from '@/lib/format';
 import { cityStats, topReasons, topSegments } from '@/lib/stats';
 import { copy } from '@/content/copy';
 import { colorForScore } from '@/content/theme';
 import SiteNav from '@/components/SiteNav';
+import LegalLinks from '@/components/LegalLinks';
 import HeroNetwork from '@/components/landing/HeroNetwork';
 import Reveal from '@/components/landing/Reveal';
 
 const FACTORS: FactorKey[] = ['safety', 'danger', 'surface', 'air', 'flow'];
 const fmt = new Intl.NumberFormat('en-US');
 const t = copy.landing;
-
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeZone: 'Europe/Berlin' }).format(date);
-}
 
 export default function Landing() {
   const [segments, setSegments] = useState<SegmentFeature[]>([]);
@@ -209,8 +205,9 @@ export default function Landing() {
         </Reveal>
       </section>
 
-      <footer className="border-t border-white/10 px-6 py-8 text-center text-xs text-neutral-500">
-        {meta && <p>{copy.methodBox.dataSource(formatDate(meta.generated_at))}</p>}
+      <footer className="border-t border-white/10 px-6 py-8 text-center text-xs text-neutral-400">
+        {meta && <p>{copy.methodBox.dataSource(formatDataDate(meta.generated_at))}</p>}
+        <LegalLinks className="mt-2 justify-center" />
       </footer>
     </div>
   );

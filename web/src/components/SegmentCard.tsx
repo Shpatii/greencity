@@ -61,6 +61,12 @@ export default function SegmentCard({ segment, meta, weights, onClose }: Props) 
           <Stat label={copy.cardLabels.overtakes}>{p.n_overtakes}</Stat>
         </dl>
 
+        {p.passes_excluded && (
+          <p className="mb-4 rounded-lg bg-white/[0.06] px-3 py-2 text-sm text-neutral-300">
+            {copy.cardLabels.passesExcluded[p.passes_excluded]}
+          </p>
+        )}
+
         {/* Reason texts */}
         {reasons.length > 0 && (
           <div>

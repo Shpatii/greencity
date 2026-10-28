@@ -2,12 +2,14 @@
 
     python qa/check_data.py
 
-Standard library only; does not import safelane. Prints one RESULT line per check.
+Standard library only; does not import safelane. Prints one RESULT line per check and
+rewrites qa/top10-check.md (A9) from the current data.
 Score formula (CONTRACT.md 3.2), own implementation:
     c     = min(1, n_points / confidence_n)
     score = 100 * c * sum_k w_k f_k, rounded half up to 1 decimal
     eligible = n_points >= min_points; rank by (score desc, n_points desc, id asc)
 """
+import gzip
 import hashlib
 import json
 import math
@@ -20,7 +22,14 @@ OUT = ROOT / "data" / "out"
 WEB = ROOT / "web" / "public" / "data"
 FACTORS = ("safety", "danger", "surface", "air", "flow")
 LON, LAT = (9.0, 9.4), (48.95, 49.3)  # generous; task says lon ~9.1-9.3, lat ~49.0-49.25
-MAX_BYTES = 5 * 1024 * 1024
+# Browsers download segments.geojson compressed (Vercel serves gzip/brotli), so the budget is on gzip.
+MAX_GZIP_BYTES = 1024 * 1024
+# A9 verdict rules (qa/top10-check.md): a top-10 segment is SUSPICIOUS when any of these holds.
+S1_MIN_OVERTAKES = 20
+S2_MIN_SPEED_KMH = 3
+S3_MIN_LENGTH_M = 25
+A9_MIN_OK = 8
+TOP10_MD = ROOT / "qa" / "top10-check.md"
 results = []
 
 
@@ -34,9 +43,9 @@ def sha(path):
 
 
 def main():
-    meta = json.loads((OUT / "meta.json").read_text())
-    web_meta = json.loads((WEB / "meta.json").read_text())
-    feats = json.loads((OUT / "segments.geojson").read_text())["features"]
+    meta = json.loads((OUT / "meta.json").read_text(encoding="utf-8"))
+    web_meta = json.loads((WEB / "meta.json").read_text(encoding="utf-8"))
+    feats = json.loads((OUT / "segments.geojson").read_text(encoding="utf-8"))["features"]
     P = [f["properties"] for f in feats]
 
     # A3
@@ -68,16 +77,19 @@ def main():
                 break
     dup = [i for i, n in ids.items() if n > 1]
     size = (OUT / "segments.geojson").stat().st_size
+    gz_size = len(gzip.compress((OUT / "segments.geojson").read_bytes(), compresslevel=6))
     print(f"  {len(feats)} features; lon {min(lons):.4f}..{max(lons):.4f}, lat {min(lats):.4f}..{max(lats):.4f}")
     print(f"  invalid geometry {len(bad_geom)} {bad_geom[:5]}; swapped {len(swapped)}; "
           f"outside box {len(out_box)} {out_box[:5]}; duplicate ids {len(dup)}")
-    print(f"  file size {size} bytes = {size / 1048576:.2f} MiB (limit 5 MiB)")
+    print(f"  file size {size / 1048576:.2f} MiB raw, {gz_size / 1024:.0f} KiB gzip "
+          f"(budget {MAX_GZIP_BYTES / 1024:.0f} KiB gzip)")
     geom_ok = not bad_geom and not swapped and not out_box and not dup
     in_task_range = 9.1 <= min(lons) and max(lons) <= 9.3 and 49.0 <= min(lats) and max(lats) <= 49.25
     if not geom_ok:
         result("A4", "FAIL", "geometry/id problems (see above)")
-    elif size > MAX_BYTES:
-        result("A4", "FAIL", f"geometry OK, no swap, no dup ids; but size {size / 1048576:.2f} MiB > 5 MiB")
+    elif gz_size > MAX_GZIP_BYTES:
+        result("A4", "FAIL", f"geometry OK, no swap, no dup ids; but {gz_size / 1024:.0f} KiB gzip "
+                             f"> {MAX_GZIP_BYTES / 1024:.0f} KiB")
     else:
         result("A4", "PASS" if in_task_range else "WARN", "geometry OK")
     if not in_task_range:
@@ -132,10 +144,12 @@ def main():
     if not stats_path.exists():
         result("A8", "FAIL", f"{stats_path.relative_to(ROOT)} does not exist")
     else:
-        st = json.loads(stats_path.read_text())
+        st = json.loads(stats_path.read_text(encoding="utf-8"))
         el = [p for p in P if p["eligible"]]
         scores = sorted(p["score"] for p in el)
-        positive = sorted(p["danger_per_100m"] for p in P if p["danger_per_100m"])
+        # contract 1.2: danger_p95 over the segments whose passes count
+        counted = [p for p in P if p.get("passes_excluded") is None and p["n_overtakes"]]
+        positive = sorted(p["danger_per_100m"] for p in counted if p["danger_per_100m"])
         pos = (len(positive) - 1) * 0.95  # linear interpolation, like pandas.quantile
         lo_i = math.floor(pos)
         p95 = positive[lo_i] + (positive[min(lo_i + 1, len(positive) - 1)] - positive[lo_i]) * (pos - lo_i)
@@ -156,10 +170,15 @@ def main():
             "score.median": statistics.median(scores),
             **{f"score.bands.{k}": v for k, v in bands.items()},
             "top10": [p["id"] for p in sorted(el, key=lambda p: p["rank"])[:10]],
+            "passes_counted": len(counted),
         }
+        for reason in ("car_free", "stationary", "short", "few_overtakes"):
+            n = sum(1 for p in P if p.get("passes_excluded") == reason)
+            if n:
+                mine_stats[f"passes_excluded.{reason}"] = n
         a5 = ROOT / "qa" / "logs" / "a5_factors.json"
         if a5.exists():
-            mine_stats["match.overtaking.matched"] = json.loads(a5.read_text())["overtaking_matched"][0]
+            mine_stats["match.overtaking.matched"] = json.loads(a5.read_text(encoding="utf-8"))["overtaking_matched"][0]
 
         def get(path):
             v = st
@@ -174,21 +193,15 @@ def main():
               f"not recomputed here (need raw): {unchecked}")
         result("A8", "PASS" if not diffs else "FAIL", f"{len(mine_stats) - len(diffs)}/{len(mine_stats)} stats match")
 
-    # A9: every top-10 id has a verdict row in qa/top10-check.md
-    t10 = ROOT / "qa" / "top10-check.md"
-    top_ids = [p["id"] for p in sorted((p for p in P if p["rank"]), key=lambda p: p["rank"])[:10]]
-    if not t10.exists():
-        result("A9", "FAIL", f"{t10.relative_to(ROOT)} does not exist")
-    else:
-        rows = [line for line in t10.read_text().splitlines() if line.startswith("|")]
-        verdict = {}
-        for i in top_ids:
-            row = next((r for r in rows if f"`{i}`" in r or f" {i} " in r), "")
-            verdict[i] = next((v for v in ("SUSPICIOUS", "OK") if v in row), None)
-        missing_v = [i for i, v in verdict.items() if v is None]
-        sus = [i for i, v in verdict.items() if v == "SUSPICIOUS"]
-        result("A9", "FAIL" if missing_v else ("WARN" if sus else "PASS"),
-               f"verdicts for {10 - len(missing_v)}/10 current top-10 ids; missing {missing_v}; suspicious {sus}")
+    # A9: S1-S4 verdict per top-10 segment, computed from the data and written to qa/top10-check.md
+    top10 = sorted((p for p in P if p["rank"]), key=lambda p: p["rank"])[:10]
+    car_free = set(meta.get("car_free_highways") or ())
+    flagged = {p["id"]: top10_flags(p, car_free) for p in top10}
+    n_ok = sum(1 for f in flagged.values() if not f)
+    write_top10(top10, flagged, meta)
+    sus = [i for i, f in flagged.items() if f]
+    result("A9", "PASS" if n_ok == len(top10) else ("WARN" if n_ok >= A9_MIN_OK else "FAIL"),
+           f"{n_ok}/{len(top10)} top-10 segments OK under S1-S4 (need {A9_MIN_OK}); suspicious {sus}")
 
     # Top-10 profile (evidence for A9 / data quality)
     top = sorted((p for p in P if p["rank"]), key=lambda p: p["rank"])
@@ -214,6 +227,51 @@ def main():
     print(f"  top 100: {few} with < 5 overtakes, {unnamed} unnamed; "
           f"eligible with n_overtakes == 0: {sum(1 for p in el if p['n_overtakes'] == 0)}/{len(el)}")
     return 0 if all(v != "FAIL" for _, v in results) else 1
+
+
+def top10_flags(p, car_free):
+    """S1-S4 rule ids that make a top-10 segment SUSPICIOUS (empty = OK)."""
+    flags = []
+    if p["n_overtakes"] < S1_MIN_OVERTAKES:
+        flags.append("S1")
+    if p["avg_speed_kmh"] is not None and p["avg_speed_kmh"] < S2_MIN_SPEED_KMH:
+        flags.append("S2")
+    if p["length_m"] < S3_MIN_LENGTH_M:
+        flags.append("S3")
+    if p.get("highway") in car_free and p["n_overtakes"] > 0:
+        flags.append("S4")
+    return flags
+
+
+def write_top10(top10, flagged, meta):
+    def cell(v, fmt="{}"):
+        return "–" if v is None else fmt.format(v)
+
+    lines = [
+        "# Top-10 check",
+        "",
+        f"Generated by `python qa/check_data.py` from `data/out/segments.geojson` (contract {meta['version']}, "
+        f"data generated {meta['generated_at']}). Do not edit by hand.",
+        "",
+        "A segment is **SUSPICIOUS** if any rule holds, otherwise **OK**:",
+        "",
+        f"- **S1** fewer than {S1_MIN_OVERTAKES} overtakes (small sample)",
+        f"- **S2** average cycling speed under {S2_MIN_SPEED_KMH} km/h (riders mostly standing)",
+        f"- **S3** shorter than {S3_MIN_LENGTH_M} m (junction stub)",
+        "- **S4** overtakes on a car-free OSM way (path, footway, pedestrian zone, cycleway)",
+        "",
+        "| Rank | id | Street | OSM highway | Length m | Overtakes | < 150 cm | Severity | Avg speed km/h | Score | Verdict |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for p in top10:
+        flags = flagged[p["id"]]
+        lines.append(
+            f"| {p['rank']} | `{p['id']}` | {p['name'] or '(unnamed)'} | {cell(p.get('highway'))} | {p['length_m']} "
+            f"| {p['n_overtakes']} | {cell(p['share_below_150'], '{:.0%}')} | {cell(p.get('pass_severity'))} "
+            f"| {cell(p['avg_speed_kmh'])} | {p['score']} | {'SUSPICIOUS (' + ', '.join(flags) + ')' if flags else 'OK'} |")
+    n_ok = sum(1 for f in flagged.values() if not f)
+    lines += ["", f"**Result: {n_ok} OK, {len(top10) - n_ok} SUSPICIOUS** (A9 needs at least {A9_MIN_OK} OK).", ""]
+    TOP10_MD.write_text("\n".join(lines), encoding="utf-8")
 
 
 if __name__ == "__main__":

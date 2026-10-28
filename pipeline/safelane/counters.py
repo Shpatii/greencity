@@ -1,4 +1,4 @@
-"""P3: MobiData BW Eco-Counter bike counters inside our bbox, as map context (not part of the score).
+"""MobiData BW Eco-Counter bike counters inside our bbox, as map context (not part of the score).
 
     python -m safelane.counters [--refresh]   ->  data/out/counters.geojson
 
@@ -15,7 +15,7 @@ from pathlib import Path
 
 import requests
 
-from safelane.ingest import USER_AGENT
+from safelane.config import USER_AGENT
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw" / "mobidata"

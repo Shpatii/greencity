@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
+import { PMTiles, Protocol } from 'pmtiles';
+import { layers, namedFlavor } from '@protomaps/basemaps';
 import type { CounterCollection, CounterProps, SegmentCollection, SegmentFeature } from '@/lib/loadData';
 import type { RankedSegment } from '@/lib/score';
 import type { Meta, SegmentProps } from '@/lib/types';
@@ -16,21 +18,35 @@ import {
 } from '@/content/theme';
 import { copy } from '@/content/copy';
 
-const STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
-// If the CARTO style can't be fetched, 'load' never fires and the segments never get added.
-// Fall back to a plain background so the data still shows.
-const FALLBACK_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  sources: {},
-  layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#0b0b0c' } }],
-};
-const STYLE_TIMEOUT_MS = 8000;
 const CENTER: [number, number] = [9.2109, 49.1427];
 const ZOOM = 13;
+const MIN_ZOOM = 9;
 
 // maplibre v6 resolves its worker relative to its own module URL, which webpack breaks.
 // `npm run copy-worker` (runs before dev/build) puts it in public/.
 maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs');
+
+// Self-hosted base map (pipeline: python run.py --basemap -> public/basemap/): tiles, fonts and
+// sprites come from this site, so no map request goes to a third party.
+const BASEMAP = '/basemap';
+const protocol = new Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
+
+function basemapStyle(origin: string): maplibregl.StyleSpecification {
+  return {
+    version: 8,
+    glyphs: `${origin}${BASEMAP}/fonts/{fontstack}/{range}.pbf`,
+    sprite: `${origin}${BASEMAP}/sprites/v4/dark`,
+    sources: {
+      protomaps: {
+        type: 'vector',
+        url: `pmtiles://${origin}${BASEMAP}/heilbronn.pmtiles`,
+        attribution: copy.basemapAttribution,
+      },
+    },
+    layers: layers('protomaps', namedFlavor('dark'), { lang: 'en' }),
+  };
+}
 
 const LINE_WIDTH: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 12, 2, 14, 3, 16, 5];
 const CASING_WIDTH: maplibregl.ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 12, 3.5, 14, 4.5, 16, 7];
@@ -121,34 +137,28 @@ export default function MapView({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    const origin = window.location.origin;
+    const archive = new PMTiles(`${origin}${BASEMAP}/heilbronn.pmtiles`);
+    protocol.add(archive);
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: STYLE_URL,
+      style: basemapStyle(origin),
       center: CENTER,
       zoom: ZOOM,
+      minZoom: MIN_ZOOM,
       attributionControl: { compact: true },
     });
     if (inset) map.setPadding(inset);
+    // Keep the view inside the extract, so the map never shows empty base map. A failed read here
+    // also fails the tile requests, which MapLibre reports; the bounds themselves are optional.
+    archive
+      .getHeader()
+      .then((h) => map.setMaxBounds([[h.minLon, h.minLat], [h.maxLon, h.maxLat]]))
+      .catch(() => {});
     map.addControl(new maplibregl.NavigationControl(), 'top-left');
     mapRef.current = map;
 
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'safelane-popup' });
-
-    // The style request can fail (error event) or just hang (no event at all); handle both.
-    let styleArrived = false;
-    let usedFallback = false;
-    const switchToFallback = (reason: unknown) => {
-      if (readyRef.current || styleArrived || usedFallback) return;
-      console.warn('Basemap style did not load, using a plain background.', reason);
-      usedFallback = true;
-      map.setStyle(FALLBACK_STYLE);
-    };
-    map.once('styledata', () => { styleArrived = true; });
-    map.on('error', (e) => {
-      // Only the style request itself; a failed tile or sprite is not a reason to drop the basemap.
-      if ((e.error as { url?: string } | undefined)?.url === STYLE_URL) switchToFallback(e.error);
-    });
-    const styleTimeout = setTimeout(() => switchToFallback('timeout'), STYLE_TIMEOUT_MS);
 
     map.on('load', () => {
       readyRef.current = true;
@@ -283,7 +293,6 @@ export default function MapView({
     });
 
     return () => {
-      clearTimeout(styleTimeout);
       readyRef.current = false;
       popup.remove();
       map.remove();

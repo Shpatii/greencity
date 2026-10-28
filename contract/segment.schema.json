@@ -26,6 +26,11 @@
     "n_points": { "type": "integer", "description": "Max of the point counts of all matched layers" },
     "n_overtakes": { "type": "integer", "description": "Sum of the overtaking histogram" },
     "share_below_150": { "$ref": "#/$defs/unitOrNull", "description": "Share of overtakes under 150 cm (0-1)" },
+    "pass_severity": { "$ref": "#/$defs/unitOrNull", "description": "1.2: mean closeness of the overtakes (severity_weights per bin, 0-1)" },
+    "passes_excluded": {
+      "enum": ["car_free", "stationary", "short", "few_overtakes", null],
+      "description": "1.2: why close passes and danger points do not count here; null = they count (or there are none)"
+    },
     "avg_overtake_cm": { "type": ["number", "null"], "description": "Average overtaking distance" },
     "danger_per_100m": { "type": ["number", "null"], "description": "Danger points per 100 m of max(length_m, danger_min_length_m)" },
     "mean_danger_risk": { "$ref": "#/$defs/unitOrNull", "description": "Mean Risk Index of danger points (0-1)" },

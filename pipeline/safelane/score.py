@@ -1,4 +1,4 @@
-"""P3: confidence, eligible, score, rank, reason_texts.
+"""Confidence, eligible, score, rank, reason_texts.
 
 Formula (CONTRACT.md 3.2), evaluated in exactly this order so that
 web/src/lib/score.ts gets bit-identical floats:

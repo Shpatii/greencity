@@ -1,4 +1,4 @@
-"""P3: PDF priority list (phase 3).
+"""PDF priority list.
 
 python -m safelane.report  ->  data/out/report.pdf (A4 portrait, default weights).
 `python run.py --publish` copies it to web/public/report.pdf.

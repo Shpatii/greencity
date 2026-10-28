@@ -109,6 +109,17 @@ describe('SegmentCard', () => {
     expect(container.querySelectorAll('li')).toHaveLength(3);
   });
 
+  it('explains why close passes do not count on the section', () => {
+    const feature = makeFeature({ passes_excluded: 'stationary', missing: ['safety', 'danger'] });
+    render(<SegmentCard segment={feature} meta={meta} onClose={jest.fn()} />);
+    expect(screen.getByText(/riders were mostly standing here/)).toBeInTheDocument();
+  });
+
+  it('shows no pass note when passes count or the field is absent (older data)', () => {
+    const { container } = render(<SegmentCard segment={makeFeature({})} meta={meta} onClose={jest.fn()} />);
+    expect(container).not.toHaveTextContent('not counted');
+  });
+
   it('shows "Unnamed street" when name is null', () => {
     render(<SegmentCard segment={makeFeature({ name: null })} meta={meta} onClose={jest.fn()} />);
     expect(screen.getAllByText('Unnamed street').length).toBeGreaterThan(0);

@@ -1,11 +1,13 @@
-"""P3: check output against the contract.
+"""Check output against the contract.
 
     python -m safelane.validate PATH [--mode factors-only|full] [--expect-source atrai|mock]
+                                     [--allow-missing-osm]
 
 PATH is a segments.geojson (or the directory holding it); meta.json is read from
-the same directory in full mode. factors-only checks P1's output before scoring
-(I3); full checks scored data (I2, I4) and fails when nothing is eligible.
+the same directory in full mode. factors-only checks the fuse output before scoring;
+full checks scored data and fails when nothing is eligible.
 --expect-source fails when meta.source differs (catches mock data left in place).
+Full mode also fails when the OSM fields (CONTRACT 3.2b) are missing, unless --allow-missing-osm.
 Exit code 1 on any failure.
 """
 import argparse
@@ -18,6 +20,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
+from safelane import config
 from safelane.score import FACTORS
 
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "contract" / "segment.schema.json"
@@ -59,6 +62,8 @@ def check_features(features, mode):
         for key in props.get("missing") or []:
             if key in FACTORS and props.get(f"f_{key}") != 0:
                 errors.append(f"{fid}: '{key}' in missing but f_{key} = {props.get(f'f_{key}')!r}")
+        if props.get("passes_excluded") and not {"safety", "danger"} <= set(props.get("missing") or []):
+            errors.append(f"{fid}: passes_excluded = {props['passes_excluded']!r} but safety/danger not in missing")
 
         if mode == "full":
             eligible, score = props.get("eligible"), props.get("score")
@@ -90,7 +95,20 @@ def check_ranks_and_meta(features, meta):
     return errors
 
 
-def validate(path, mode="full", expect_source=None):
+def check_osm(features, meta, min_coverage=config.MIN_OSM_COVERAGE):
+    """Published data must carry the OSM fields: a failed Overpass fetch must not ship null ones."""
+    errors = []
+    if meta is not None and not meta.get("osm_fetched_at"):
+        errors.append("meta.osm_fetched_at is null: published without OSM data (run `python run.py --ingest`)")
+    props = [f.get("properties") or {} for f in features]
+    if props:
+        share = sum(1 for p in props if p.get("infra_class") is not None) / len(props)
+        if share < min_coverage:
+            errors.append(f"only {share:.1%} of segments have an OSM infra_class, need {min_coverage:.0%}")
+    return errors
+
+
+def validate(path, mode="full", expect_source=None, allow_missing_osm=False):
     """Return (features, errors) for the segments.geojson at path."""
     path = Path(path)
     if path.is_dir():
@@ -101,6 +119,8 @@ def validate(path, mode="full", expect_source=None):
         meta_path = path.parent / "meta.json"
         meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else None
         errors += check_ranks_and_meta(features, meta)
+        if not allow_missing_osm:
+            errors += check_osm(features, meta)
     if expect_source:
         meta_path = path.parent / "meta.json"
         source = json.loads(meta_path.read_text(encoding="utf-8")).get("source") if meta_path.exists() else None
@@ -114,9 +134,11 @@ def main(argv=None):
     parser.add_argument("path", help="segments.geojson or the directory holding it")
     parser.add_argument("--mode", choices=["factors-only", "full"], default="full")
     parser.add_argument("--expect-source", choices=["atrai", "mock"])
+    parser.add_argument("--allow-missing-osm", action="store_true",
+                        help="skip the OSM coverage check (offline development data)")
     args = parser.parse_args(argv)
 
-    features, errors = validate(args.path, args.mode, args.expect_source)
+    features, errors = validate(args.path, args.mode, args.expect_source, args.allow_missing_osm)
     n_eligible = sum(1 for f in features if (f.get("properties") or {}).get("eligible") is True)
     print(f"{args.path} ({args.mode}): {len(features)} features"
           + (f", {n_eligible} eligible" if args.mode == "full" else ""))
